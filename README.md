@@ -1,16 +1,85 @@
-# React + Vite
+# Employee Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive Employee Management Dashboard built with React, Vite, and Tailwind CSS. This application provides an intuitive interface for managing employee data, viewing statistics, and navigating through administrative tasks.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Dashboard Overview**: Visual statistics and key metrics at a glance.
+- **Employee Management**: View, manage, and track employee information.
+- **Responsive Design**: Fully responsive layout that works seamlessly on desktop and mobile devices.
+- **Modern UI**: Clean and professional interface designed with Tailwind CSS.
+- **Sidebar Navigation**: Easy access to different modules of the application.
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend Framework**: [React](https://react.dev/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Package Manager**: [Bun](https://bun.sh/) (or npm/yarn)
+- **Linting**: ESLint
 
-## Expanding the ESLint configuration
+## 📦 Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+
+Ensure you have the following installed:
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [Bun](https://bun.sh/) (optional, but recommended for faster installs)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd react-browser
+   ```
+
+2. **Install dependencies**
+   Using Bun:
+   ```bash
+   bun install
+   ```
+   Or using npm:
+   ```bash
+   npm install
+   ```
+
+### Running the Application
+
+Start the development server:
+
+```bash
+bun run dev
+# or
+npm run dev
+```
+
+The application will be available at `http://localhost:5173`.
+
+## 📜 Scripts
+
+- `dev`: Starts the development server.
+- `build`: Builds the application for production.
+- `preview`: Previews the production build locally.
+- `lint`: Runs ESLint to check for code quality issues.
+
+## 📂 Project Structure
+
+```
+src/
+├── assets/         # Static assets (images, icons)
+├── components/     # Reusable UI components (Sidebar, Stats, etc.)
+├── data/           # Mock data and constants
+├── features/       # Feature-specific components (e.g., EmployeeList)
+├── layouts/        # Layout components
+├── App.jsx         # Main application component
+└── main.jsx        # Entry point
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
