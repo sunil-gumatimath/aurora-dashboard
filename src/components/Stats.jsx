@@ -1,41 +1,41 @@
-import React from "react";
+import React, { useMemo } from "react";
 import Card from "./Card";
 import { employees } from "../data/employees";
 
 const Stats = () => {
-  const totalEmployees = employees.length;
-  const activeEmployees = employees.filter((e) => e.status === "Active").length;
-  const onLeaveEmployees = employees.filter(
-    (e) => e.status === "On Leave",
-  ).length;
-  const departments = new Set(employees.map((e) => e.department)).size;
+  const stats = useMemo(() => {
+    const totalEmployees = employees.length;
+    const activeEmployees = employees.filter((e) => e.status === "Active").length;
+    const onLeaveEmployees = employees.filter((e) => e.status === "On Leave").length;
+    const departments = new Set(employees.map((e) => e.department)).size;
 
-  const stats = [
-    {
-      label: "Total Employees",
-      value: totalEmployees,
-      change: "+12%",
-      trend: "up",
-    },
-    {
-      label: "Active Now",
-      value: activeEmployees,
-      change: "+5%",
-      trend: "up",
-    },
-    {
-      label: "On Leave",
-      value: onLeaveEmployees,
-      change: "-2%",
-      trend: "down",
-    },
-    {
-      label: "Departments",
-      value: departments,
-      change: "0%",
-      trend: "neutral",
-    },
-  ];
+    return [
+      {
+        label: "Total Employees",
+        value: totalEmployees,
+        change: "+12%",
+        trend: "up",
+      },
+      {
+        label: "Active Now",
+        value: activeEmployees,
+        change: "+5%",
+        trend: "up",
+      },
+      {
+        label: "On Leave",
+        value: onLeaveEmployees,
+        change: "-2%",
+        trend: "down",
+      },
+      {
+        label: "Departments",
+        value: departments,
+        change: "0%",
+        trend: "neutral",
+      },
+    ];
+  }, []);
 
   return (
     <div className="stats-grid">
@@ -61,4 +61,4 @@ const Stats = () => {
   );
 };
 
-export default Stats;
+export default React.memo(Stats);
