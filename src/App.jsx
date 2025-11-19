@@ -1,9 +1,9 @@
-import React from "react";
+import React, { Suspense } from "react";
 import EmployeeList from "./features/employees/EmployeeList";
 import Sidebar from "./components/Sidebar";
 import Stats from "./components/Stats";
-import AnalyticsDashboard from "./features/analytics/AnalyticsDashboard";
-import CalendarView from "./features/calendar/CalendarView";
+const AnalyticsDashboard = React.lazy(() => import("./features/analytics/AnalyticsDashboard"));
+const CalendarView = React.lazy(() => import("./features/calendar/CalendarView"));
 import SettingsView from "./features/settings/SettingsView";
 
 function App() {
@@ -45,9 +45,21 @@ function App() {
           </>
         )}
 
-        {activeTab === "analytics" && <AnalyticsDashboard />}
+        {activeTab === "analytics" && (
+          <Suspense fallback={<div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>}>
+            <AnalyticsDashboard />
+          </Suspense>
+        )}
 
-        {activeTab === "calendar" && <CalendarView />}
+        {activeTab === "calendar" && (
+          <Suspense fallback={<div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>}>
+            <CalendarView />
+          </Suspense>
+        )}
 
         {activeTab === "settings" && <SettingsView />}
 

@@ -1,522 +1,457 @@
-import React, { useState } from "react";
-import Card from "../../components/Card";
-import Button from "../../components/Button";
-import { User, Bell, Shield, Palette, Save, Upload } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { User, Bell, Shield, Palette, Save, AlertCircle } from "lucide-react";
+import Toast from "../../components/Toast";
 
 const SettingsView = () => {
-  // Profile settings state
-  const [profile, setProfile] = useState({
-    name: "Tedz",
-    email: "tedz@staffly.com",
-    bio: "Admin of Staffly employee management system",
-    avatar: "https://api.dicebear.com/9.x/micah/svg?seed=Tedz"
+  const [activeTab, setActiveTab] = useState("profile");
+  const [toast, setToast] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load settings from localStorage or use defaults
+  const [settings, setSettings] = useState(() => {
+    const defaults = {
+      name: "Tedz",
+      email: "tedz@staffly.com",
+      bio: "Admin of Staffly employee management system",
+      emailNotifications: true,
+      pushNotifications: false,
+      newEmployeeAlerts: true,
+      systemUpdates: true,
+      weeklyReports: false,
+      theme: "light",
+      language: "en",
+      timezone: "Asia/Kolkata",
+      autoBackup: true,
+      dataRetention: "3years",
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+      twoFactorAuth: false
+    };
+    const saved = localStorage.getItem('userSettings');
+    return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
   });
 
-  // Notification settings
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    pushNotifications: false,
-    newEmployeeAlerts: true,
-    systemUpdates: true,
-    weeklyReports: false
-  });
-
-  // System settings
-  const [systemSettings, setSystemSettings] = useState({
-    theme: "light",
-    language: "en",
-    timezone: "Asia/Kolkata",
-    autoBackup: true,
-    dataRetention: "3years"
-  });
-
-  // Security settings
-  const [securitySettings, setSecuritySettings] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-    twoFactorAuth: false
-  });
-
-  const [activeSection, setActiveSection] = useState("profile");
-  const [loading, setLoading] = useState(false);
-
-  const sections = [
-    {
-      id: "profile",
-      label: "Profile",
-      icon: User,
-      description: "Manage your personal information and preferences"
-    },
-    {
-      id: "notifications",
-      label: "Notifications",
-      icon: Bell,
-      description: "Configure how you receive notifications and updates"
-    },
-    {
-      id: "system",
-      label: "System",
-      icon: Palette,
-      description: "Customize the system appearance and behavior"
-    },
-    {
-      id: "security",
-      label: "Security",
-      icon: Shield,
-      description: "Update your password and security settings"
-    }
+  const tabs = [
+    { id: "profile", label: "Profile", icon: User },
+    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "system", label: "System", icon: Palette },
+    { id: "security", label: "Security", icon: Shield }
   ];
 
-  const handleProfileChange = (field, value) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
-  };
+  // Apply theme changes to document
+  useEffect(() => {
+    const applyTheme = () => {
+      let theme = settings.theme;
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    };
 
-  const handleNotificationChange = (field, value) => {
-    setNotifications(prev => ({ ...prev, [field]: value }));
-  };
+    applyTheme();
 
-  const handleSystemChange = (field, value) => {
-    setSystemSettings(prev => ({ ...prev, [field]: value }));
-  };
+    // Listen for system theme changes if in auto mode
+    if (settings.theme === 'auto') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => applyTheme();
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, [settings.theme]);
 
-  const handleSecurityChange = (field, value) => {
-    setSecuritySettings(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveSettings = async (section) => {
-    setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Here you would typically make API calls to save settings
-    console.log(`${section} settings saved`);
-
-    setLoading(false);
-    alert(`${section} settings saved successfully!`);
-  };
-
-  const handleAvatarChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfile(prev => ({ ...prev, avatar: e.target.result }));
-      };
-      reader.readAsDataURL(file);
+  const updateSetting = (field, value) => {
+    setSettings(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  const renderProfileSection = () => (
-    <Card className="max-w-2xl">
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <img
-              src={profile.avatar}
-              alt={profile.name}
-              className="w-20 h-20 rounded-full border-4 border-white shadow-lg"
-            />
-            <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full cursor-pointer hover:bg-primary-hover transition-colors">
-              <Upload size={14} />
-              <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden"
-              />
-            </label>
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900">{profile.name}</h3>
-            <p className="text-sm text-gray-500">Administrator</p>
-          </div>
-        </div>
+  const validateForm = () => {
+    const newErrors = {};
 
-        <div className="grid grid-cols-1 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
-            </label>
-            <input
-              type="text"
-              value={profile.name}
-              onChange={(e) => handleProfileChange("name", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
+    // Profile validation
+    if (!settings.name.trim()) {
+      newErrors.name = "Name is required";
+    }
+    if (!settings.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.email)) {
+      newErrors.email = "Please enter a valid email";
+    }
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
-            </label>
-            <input
-              type="email"
-              value={profile.email}
-              onChange={(e) => handleProfileChange("email", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
+    // Security validation (only if any password field is filled)
+    if (settings.newPassword || settings.confirmPassword || settings.currentPassword) {
+      if (!settings.currentPassword) {
+        newErrors.currentPassword = "Current password is required";
+      }
+      if (!settings.newPassword) {
+        newErrors.newPassword = "New password is required";
+      } else if (settings.newPassword.length < 8) {
+        newErrors.newPassword = "Password must be at least 8 characters";
+      }
+      if (settings.newPassword !== settings.confirmPassword) {
+        newErrors.confirmPassword = "Passwords do not match";
+      }
+    }
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Bio
-            </label>
-            <textarea
-              value={profile.bio}
-              onChange={(e) => handleProfileChange("bio", e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-            />
-          </div>
-        </div>
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-        <div className="flex justify-end">
-          <Button onClick={() => handleSaveSettings("Profile")} disabled={loading}>
-            <Save size={16} />
-            {loading ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
+  const saveSettings = async () => {
+    if (!validateForm()) {
+      setToast({ type: 'error', message: 'Please fix the errors before saving.' });
+      return;
+    }
 
-  const renderNotificationsSection = () => (
-    <Card className="max-w-2xl">
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900">Notification Preferences</h3>
+    setIsSaving(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Save to localStorage
+      const settingsToSave = { ...settings };
+      // Don't save password fields for security
+      delete settingsToSave.currentPassword;
+      delete settingsToSave.newPassword;
+      delete settingsToSave.confirmPassword;
+      
+      localStorage.setItem('userSettings', JSON.stringify(settingsToSave));
+      
+      // Reset password fields
+      setSettings(prev => ({
+        ...prev,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      }));
+      
+      setToast({ type: 'success', message: 'Settings saved successfully!' });
+    } catch {
+      setToast({ type: 'error', message: 'Failed to save settings. Please try again.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-        <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex-1">
-                <h4 className="font-medium text-gray-900">Email Notifications</h4>
-                <p className="text-sm text-gray-600">Receive email updates about system activities</p>
-              </div>
-            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0 ml-4">
-              <input
-                type="checkbox"
-                checked={notifications.emailNotifications}
-                onChange={(e) => handleNotificationChange("emailNotifications", e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h4 className="font-medium text-gray-900">Push Notifications</h4>
-              <p className="text-sm text-gray-600">Receive browser notifications for important updates</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifications.pushNotifications}
-                onChange={(e) => handleNotificationChange("pushNotifications", e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h4 className="font-medium text-gray-900">New Employee Alerts</h4>
-              <p className="text-sm text-gray-600">Get notified when new employees are added</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifications.newEmployeeAlerts}
-                onChange={(e) => handleNotificationChange("newEmployeeAlerts", e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h4 className="font-medium text-gray-900">System Updates</h4>
-              <p className="text-sm text-gray-600">Receive notifications about system maintenance and updates</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifications.systemUpdates}
-                onChange={(e) => handleNotificationChange("systemUpdates", e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h4 className="font-medium text-gray-900">Weekly Reports</h4>
-              <p className="text-sm text-gray-600">Get weekly summary reports via email</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifications.weeklyReports}
-                onChange={(e) => handleNotificationChange("weeklyReports", e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            </label>
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button onClick={() => handleSaveSettings("Notifications")} disabled={loading}>
-            <Save size={16} />
-            {loading ? "Saving..." : "Save Preferences"}
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-
-  const renderSystemSection = () => (
-    <Card className="max-w-2xl">
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900">System Preferences</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Theme
-            </label>
-            <select
-              value={systemSettings.theme}
-              onChange={(e) => handleSystemChange("theme", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-              <option value="auto">Auto (System)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Language
-            </label>
-            <select
-              value={systemSettings.language}
-              onChange={(e) => handleSystemChange("language", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
-              <option value="fr">French</option>
-              <option value="de">German</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Timezone
-            </label>
-            <select
-              value={systemSettings.timezone}
-              onChange={(e) => handleSystemChange("timezone", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="Asia/Kolkata">Asia/Kolkata (GMT+5:30)</option>
-              <option value="America/New_York">America/New_York (Eastern)</option>
-              <option value="Europe/London">Europe/London (GMT)</option>
-              <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Data Retention
-            </label>
-            <select
-              value={systemSettings.dataRetention}
-              onChange={(e) => handleSystemChange("dataRetention", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="1year">1 Year</option>
-              <option value="2years">2 Years</option>
-              <option value="3years">3 Years</option>
-              <option value="forever">Forever</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-          <div>
-            <h4 className="font-medium text-gray-900">Automatic Backups</h4>
-            <p className="text-sm text-gray-600">Automatically backup data daily</p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={systemSettings.autoBackup}
-              onChange={(e) => handleSystemChange("autoBackup", e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-          </label>
-        </div>
-
-        <div className="flex justify-end">
-          <Button onClick={() => handleSaveSettings("System")} disabled={loading}>
-            <Save size={16} />
-            {loading ? "Saving..." : "Save Preferences"}
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-
-  const renderSecuritySection = () => (
-    <Card className="max-w-2xl">
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900">Security Settings</h3>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Current Password
-            </label>
-            <input
-              type="password"
-              value={securitySettings.currentPassword}
-              onChange={(e) => handleSecurityChange("currentPassword", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Enter current password"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              New Password
-            </label>
-            <input
-              type="password"
-              value={securitySettings.newPassword}
-              onChange={(e) => handleSecurityChange("newPassword", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Enter new password"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm New Password
-            </label>
-            <input
-              type="password"
-              value={securitySettings.confirmPassword}
-              onChange={(e) => handleSecurityChange("confirmPassword", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Confirm new password"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-          <div>
-            <h4 className="font-medium text-gray-900">Two-Factor Authentication</h4>
-            <p className="text-sm text-gray-600">Add an extra layer of security to your account</p>
-            {securitySettings.twoFactorAuth && (
-              <span className="inline-block mt-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                Enabled
-              </span>
-            )}
-          </div>
-          <Button
-            variant={securitySettings.twoFactorAuth ? "ghost" : "primary"}
-            className={securitySettings.twoFactorAuth ? "btn-danger-ghost" : ""}
-            onClick={() => {
-              setSecuritySettings(prev => ({
-                ...prev,
-                twoFactorAuth: !prev.twoFactorAuth
-              }));
-              alert(securitySettings.twoFactorAuth ? "2FA disabled" : "2FA setup initiated");
-            }}
-          >
-            {securitySettings.twoFactorAuth ? "Disable" : "Enable"}
-          </Button>
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => {
-            setSecuritySettings({
-              currentPassword: "",
-              newPassword: "",
-              confirmPassword: "",
-              twoFactorAuth: securitySettings.twoFactorAuth
-            });
-          }}>
-            Cancel
-          </Button>
-          <Button onClick={() => handleSaveSettings("Security")} disabled={loading}>
-            <Save size={16} />
-            {loading ? "Updating..." : "Update Password"}
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-
-  const renderContent = () => {
-    switch (activeSection) {
+  const renderTabContent = () => {
+    switch (activeTab) {
       case "profile":
-        return renderProfileSection();
+        return (
+          <div className="space-y-8">
+            <div className="flex items-center gap-6">
+              <img
+                src="https://api.dicebear.com/9.x/micah/svg?seed=Tedz"
+                alt="Profile"
+                className="w-16 h-16 rounded-full"
+              />
+              <div>
+                <h3 className="font-medium text-gray-900">{settings.name}</h3>
+                <p className="text-sm text-gray-500">Administrator</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Full Name</label>
+                <input
+                  type="text"
+                  value={settings.name}
+                  disabled={isSaving}
+                  onChange={(e) => updateSetting("name", e.target.value)}
+                  className={`w-full px-0 py-2 border-0 border-b focus:border-primary focus:outline-none bg-transparent ${
+                    errors.name ? 'border-red-500' : 'border-gray-200'
+                  } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  placeholder="Enter your full name"
+                />
+                {errors.name && <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <AlertCircle size={12} /> {errors.name}
+                </p>}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  value={settings.email}
+                  disabled={isSaving}
+                  onChange={(e) => updateSetting("email", e.target.value)}
+                  className={`w-full px-0 py-2 border-0 border-b focus:border-primary focus:outline-none bg-transparent ${
+                    errors.email ? 'border-red-500' : 'border-gray-200'
+                  } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  placeholder="Enter your email"
+                />
+                {errors.email && <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <AlertCircle size={12} /> {errors.email}
+                </p>}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Bio</label>
+              <textarea
+                value={settings.bio}
+                disabled={isSaving}
+                onChange={(e) => updateSetting("bio", e.target.value)}
+                rows={3}
+                className={`w-full px-0 py-2 border-0 border-b border-gray-200 focus:border-primary focus:outline-none bg-transparent resize-none ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                placeholder="Tell us about yourself"
+              />
+            </div>
+          </div>
+        );
+
       case "notifications":
-        return renderNotificationsSection();
+        return (
+          <div className="space-y-4">
+            {[
+              { key: "emailNotifications", label: "Email notifications", desc: "Receive email updates" },
+              { key: "pushNotifications", label: "Push notifications", desc: "Browser notifications" },
+              { key: "newEmployeeAlerts", label: "New employee alerts", desc: "When employees are added" },
+              { key: "systemUpdates", label: "System updates", desc: "Maintenance notifications" },
+              { key: "weeklyReports", label: "Weekly reports", desc: "Summary reports via email" }
+            ].map(({ key, label, desc }) => (
+              <div key={key} className="flex items-center justify-between py-3">
+                <div>
+                  <p className="font-medium text-gray-900">{label}</p>
+                  <p className="text-sm text-gray-500">{desc}</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings[key]}
+                    disabled={isSaving}
+                    onChange={(e) => updateSetting(key, e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+            ))}
+          </div>
+        );
+
       case "system":
-        return renderSystemSection();
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Theme</label>
+                <select
+                  value={settings.theme}
+                  disabled={isSaving}
+                  onChange={(e) => updateSetting("theme", e.target.value)}
+                  className={`w-full px-0 py-2 border-0 border-b border-gray-200 focus:border-primary focus:outline-none bg-transparent ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                  <option value="auto">Auto</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Language</label>
+                <select
+                  value={settings.language}
+                  disabled={isSaving}
+                  onChange={(e) => updateSetting("language", e.target.value)}
+                  className={`w-full px-0 py-2 border-0 border-b border-gray-200 focus:border-primary focus:outline-none bg-transparent ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Timezone</label>
+                <select
+                  value={settings.timezone}
+                  disabled={isSaving}
+                  onChange={(e) => updateSetting("timezone", e.target.value)}
+                  className={`w-full px-0 py-2 border-0 border-b border-gray-200 focus:border-primary focus:outline-none bg-transparent ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <option value="Asia/Kolkata">Asia/Kolkata</option>
+                  <option value="America/New_York">America/New_York</option>
+                  <option value="Europe/London">Europe/London</option>
+                  <option value="Asia/Tokyo">Asia/Tokyo</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Data Retention</label>
+                <select
+                  value={settings.dataRetention}
+                  disabled={isSaving}
+                  onChange={(e) => updateSetting("dataRetention", e.target.value)}
+                  className={`w-full px-0 py-2 border-0 border-b border-gray-200 focus:border-primary focus:outline-none bg-transparent ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <option value="1year">1 Year</option>
+                  <option value="2years">2 Years</option>
+                  <option value="3years">3 Years</option>
+                  <option value="forever">Forever</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <p className="font-medium text-gray-900">Automatic backups</p>
+                <p className="text-sm text-gray-500">Daily data backup</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.autoBackup}
+                  disabled={isSaving}
+                  onChange={(e) => updateSetting("autoBackup", e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+          </div>
+        );
+
       case "security":
-        return renderSecuritySection();
+        return (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Current Password</label>
+                <input
+                  type="password"
+                  value={settings.currentPassword}
+                  disabled={isSaving}
+                  onChange={(e) => updateSetting("currentPassword", e.target.value)}
+                  className={`w-full px-0 py-2 border-0 border-b focus:border-primary focus:outline-none bg-transparent ${
+                    errors.currentPassword ? 'border-red-500' : 'border-gray-200'
+                  } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  placeholder="Enter current password"
+                />
+                {errors.currentPassword && <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <AlertCircle size={12} /> {errors.currentPassword}
+                </p>}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">New Password</label>
+                <input
+                  type="password"
+                  value={settings.newPassword}
+                  disabled={isSaving}
+                  onChange={(e) => updateSetting("newPassword", e.target.value)}
+                  className={`w-full px-0 py-2 border-0 border-b focus:border-primary focus:outline-none bg-transparent ${
+                    errors.newPassword ? 'border-red-500' : 'border-gray-200'
+                  } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  placeholder="Enter new password"
+                />
+                {errors.newPassword && <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <AlertCircle size={12} /> {errors.newPassword}
+                </p>}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Confirm Password</label>
+                <input
+                  type="password"
+                  value={settings.confirmPassword}
+                  disabled={isSaving}
+                  onChange={(e) => updateSetting("confirmPassword", e.target.value)}
+                  className={`w-full px-0 py-2 border-0 border-b focus:border-primary focus:outline-none bg-transparent ${
+                    errors.confirmPassword ? 'border-red-500' : 'border-gray-200'
+                  } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  placeholder="Confirm new password"
+                />
+                {errors.confirmPassword && <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <AlertCircle size={12} /> {errors.confirmPassword}
+                </p>}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <p className="font-medium text-gray-900">Two-factor authentication</p>
+                <p className="text-sm text-gray-500">Extra security layer</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.twoFactorAuth}
+                  disabled={isSaving}
+                  onChange={(e) => updateSetting("twoFactorAuth", e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+          </div>
+        );
+
       default:
-        return renderProfileSection();
+        return null;
     }
   };
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-      {/* Settings Navigation */}
-      <div className="w-full lg:w-80">
-        <Card className="sticky top-6">
-          <nav className="space-y-1">
-            {sections.map((section) => {
-              const Icon = section.icon;
-              return (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`w-full flex items-start gap-3 p-4 rounded-lg text-left transition-colors ${
-                    activeSection === section.id
-                      ? "bg-primary/5 text-primary border-l-4 border-primary"
-                      : "hover:bg-gray-50 text-gray-700 border-l-4 border-transparent"
-                  }`}
-                >
-                  <Icon size={20} className="mt-0.5 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{section.label}</div>
-                    <div className="text-sm text-gray-500 leading-tight mt-0.5 opacity-75">
-                      {section.description}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </nav>
-        </Card>
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200 mb-12">
+        <nav className="flex space-x-8">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 py-3 px-2 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Icon size={20} />
+                <span className="min-w-0">{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Settings Content */}
-      <div className="flex-1 min-w-0">
-        {renderContent()}
+      {/* Content */}
+      <div className="max-w-2xl">
+        {renderTabContent()}
+        
+        {/* Save Button */}
+        <div className="flex justify-end mt-8 pt-6 border-t border-gray-200">
+          <button
+            onClick={saveSettings}
+            disabled={isSaving}
+            className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
+              isSaving
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-primary hover:bg-primary/90'
+            } text-white`}
+          >
+            <Save size={16} />
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
       </div>
+      
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

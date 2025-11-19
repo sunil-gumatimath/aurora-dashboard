@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Card from "../../components/Card";
 import Button from "../../components/Button";
 import { employees } from "../../data/employees";
@@ -6,12 +6,15 @@ import { employees } from "../../data/employees";
 const EmployeeList = () => {
 	const [searchTerm, setSearchTerm] = useState("");
 
-	const filteredEmployees = employees.filter(
-		(emp) =>
-			emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			emp.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			emp.department.toLowerCase().includes(searchTerm.toLowerCase()),
-	);
+	const filteredEmployees = useMemo(() => {
+		const term = searchTerm.toLowerCase();
+		return employees.filter(
+			(emp) =>
+				emp.name.toLowerCase().includes(term) ||
+				emp.role.toLowerCase().includes(term) ||
+				emp.department.toLowerCase().includes(term),
+		);
+	}, [searchTerm]);
 
 	const getStatusClass = (status) => {
 		switch (status) {
@@ -97,4 +100,4 @@ const EmployeeList = () => {
 	);
 };
 
-export default EmployeeList;
+export default React.memo(EmployeeList);
