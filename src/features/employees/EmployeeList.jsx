@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
-import Card from "../../components/Card";
-import Button from "../../components/Button";
+import { UserPlus, Users } from "lucide-react";
+import "./employees-styles.css";
 import { employees } from "../../data/employees";
 
 const EmployeeList = () => {
@@ -19,83 +19,100 @@ const EmployeeList = () => {
 	const getStatusClass = (status) => {
 		switch (status) {
 			case "Active":
-				return "status-active";
+				return "active";
 			case "On Leave":
-				return "status-leave";
+				return "leave";
 			default:
-				return "status-offline";
+				return "offline";
 		}
 	};
 
 	return (
-		<div className="flex flex-col gap-4">
-			<div className="mb-6 flex justify-between items-center gap-4">
+		<div className="employees-container">
+			<div className="employees-header">
 				<input
 					type="text"
-					placeholder="Search employees..."
+					placeholder="Search employees by name, role, or department..."
 					value={searchTerm}
 					onChange={(e) => setSearchTerm(e.target.value)}
-					className="search-input"
+					className="employees-search"
 				/>
-				<Button onClick={() => alert("Add Employee modal would open here")}>
-					Add Employee
-				</Button>
+				<button
+					type="button"
+					className="btn btn-primary"
+					onClick={() => alert("Add Employee modal would open here")}
+				>
+					<UserPlus size={18} />
+					<span>Add Employee</span>
+				</button>
 			</div>
 
-			<div className="employee-grid">
-				{filteredEmployees.map((employee) => (
-					<Card key={employee.id}>
-						<div className="employee-card-header">
-							<div className="employee-info">
-								<img
-									src={employee.avatar}
-									alt={employee.name}
-									className="employee-avatar"
-								/>
-								<div className="employee-details">
-									<h3>{employee.name}</h3>
-									<p>{employee.role}</p>
+			{filteredEmployees.length > 0 ? (
+				<div className="employees-grid">
+					{filteredEmployees.map((employee) => (
+						<div key={employee.id} className="card employee-card">
+							<div className="employee-card-header">
+								<div className="employee-info">
+									<img
+										src={employee.avatar}
+										alt={employee.name}
+										className="employee-avatar"
+									/>
+									<div className="employee-details">
+										<h3>{employee.name}</h3>
+										<p>{employee.role}</p>
+									</div>
+								</div>
+								<span
+									className={`employee-status-badge ${getStatusClass(employee.status)}`}
+								>
+									{employee.status}
+								</span>
+							</div>
+
+							<div className="employee-meta">
+								<div className="employee-meta-row">
+									<span className="employee-meta-label">Department</span>
+									<span className="employee-meta-value">{employee.department}</span>
+								</div>
+								<div className="employee-meta-row">
+									<span className="employee-meta-label">Email</span>
+									<span className="employee-meta-value">{employee.email}</span>
 								</div>
 							</div>
-							<span
-								className={`status-badge ${getStatusClass(employee.status)}`}
-							>
-								{employee.status}
-							</span>
-						</div>
 
-						<div className="employee-meta">
-							<div className="meta-row">
-								<span className="meta-label">Department</span>
-								<span className="meta-value">{employee.department}</span>
-							</div>
-							<div className="meta-row">
-								<span className="meta-label">Email</span>
-								<span className="meta-value">{employee.email}</span>
+							<div className="employee-actions">
+								<button
+									type="button"
+									className="employee-action-btn"
+									onClick={() => alert(`Edit ${employee.name}`)}
+								>
+									Edit
+								</button>
+								<button
+									type="button"
+									className="employee-action-btn danger"
+									onClick={() =>
+										confirm(`Are you sure you want to delete ${employee.name}?`)
+									}
+								>
+									Delete
+								</button>
 							</div>
 						</div>
-
-						<div className="card-actions">
-							<Button
-								variant="ghost"
-								className="flex-1 justify-center"
-								onClick={() => alert(`Edit ${employee.name}`)}
-							>
-								Edit
-							</Button>
-							<Button
-								variant="ghost"
-								className="flex-1 justify-center btn-danger-ghost"
-								onClick={() =>
-									confirm(`Are you sure you want to delete ${employee.name}?`)
-								}
-							>
-								Delete
-							</Button>
-						</div>
-					</Card>
-				))}
-			</div>
+					))}
+				</div>
+			) : (
+				<div className="card employees-empty">
+					<Users size={64} className="employees-empty-icon" />
+					<h3 className="employees-empty-title">No employees found</h3>
+					<p className="employees-empty-description">
+						{searchTerm
+							? `No employees match "${searchTerm}". Try a different search term.`
+							: "No employees in the system yet. Add your first employee to get started."}
+					</p>
+				</div>
+			)}
 		</div>
 	);
 };
