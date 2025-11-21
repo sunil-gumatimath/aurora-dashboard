@@ -203,6 +203,11 @@ button {
   box-shadow: var(--shadow-sm);
 }
 
+/* Adjust position when sidebar is collapsed */
+.sidebar.collapsed .sidebar-collapse-toggle {
+  right: -12px;
+}
+
 .sidebar-collapse-toggle:hover {
   background: var(--primary-hover);
   transform: scale(1.1);
@@ -478,6 +483,11 @@ button {
   .sidebar-collapse-toggle {
     display: flex;
   }
+
+  /* Ensure sidebar is sticky on desktop */
+  .sidebar {
+    position: sticky;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -497,6 +507,8 @@ button {
     top: 0;
     bottom: 0;
     z-index: 50;
+    /* Force expanded width on mobile */
+    width: 18rem;
   }
 
   .sidebar.mobile-open {
@@ -504,11 +516,26 @@ button {
     box-shadow: 8px 0 32px rgba(0, 0, 0, 0.1);
   }
 
-  /* Hide collapse toggle on mobile */
+  /* Hide collapse toggle on mobile/tablet */
   .sidebar-collapse-toggle {
     display: none !important;
   }
+
+  /* Force sidebar to be expanded on mobile */
+  .sidebar.collapsed {
+    width: 18rem;
+  }
+
+  /* Show all labels on mobile */
+  .sidebar.collapsed .brand-name,
+  .sidebar.collapsed .nav-item-label,
+  .sidebar.collapsed .user-info-sidebar {
+    opacity: 1;
+    width: auto;
+    height: auto;
+  }
 }
+
 
 @media (max-width: 640px) {
   .sidebar {
