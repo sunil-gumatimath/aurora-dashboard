@@ -41,8 +41,8 @@ const Sidebar = ({ activeTab, onTabChange }) => {
         />
       )}
 
-      {/* Sidebar */}
-      <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
+      {/* Sidebar Container */}
+      <div className="sidebar-container">
         {/* Collapse Toggle Button (Desktop only) */}
         <button
           className="sidebar-collapse-toggle"
@@ -52,63 +52,66 @@ const Sidebar = ({ activeTab, onTabChange }) => {
           {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
 
-        <div className="sidebar-header">
-          <div className="brand-logo">
-            <span className="text-xl font-bold">A</span>
-          </div>
-          {!isCollapsed && (
-            <h1 className="brand-name">
-              Aurora
-            </h1>
-          )}
-        </div>
-
-        <nav className="sidebar-nav">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleTabChange(item.id)}
-                className={`nav-item ${activeTab === item.id ? "active" : ""}`}
-                title={isCollapsed ? item.label : ""}
-              >
-                <Icon size={20} strokeWidth={2} />
-                {!isCollapsed && (
-                  <>
-                    <span className="nav-item-label">{item.label}</span>
-                    {activeTab === item.id && (
-                      <ChevronRight size={16} className="ml-auto opacity-50" />
-                    )}
-                  </>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="user-profile-sidebar">
-            <div className="user-avatar-sidebar">
-              SK
+        {/* Sidebar */}
+        <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
+          <div className="sidebar-header">
+            <div className="brand-logo">
+              <span className="text-xl font-bold">A</span>
             </div>
             {!isCollapsed && (
-              <div className="user-info-sidebar">
-                <span className="user-name-sidebar">Sunil Kumar</span>
-                <span className="user-email-sidebar">sunil.kumar@aurora.app</span>
-              </div>
+              <h1 className="brand-name">
+                Aurora
+              </h1>
             )}
-            <button
-              className="sidebar-logout-btn"
-              aria-label="Logout"
-              onClick={() => alert('Logout functionality')}
-              title="Logout"
-            >
-              <LogOut size={16} />
-            </button>
           </div>
-        </div>
-      </aside>
+
+          <nav className="sidebar-nav">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleTabChange(item.id)}
+                  className={`nav-item ${activeTab === item.id ? "active" : ""}`}
+                  title={isCollapsed ? item.label : ""}
+                >
+                  <Icon size={20} strokeWidth={2} />
+                  {!isCollapsed && (
+                    <>
+                      <span className="nav-item-label">{item.label}</span>
+                      {activeTab === item.id && (
+                        <ChevronRight size={16} className="ml-auto opacity-50" />
+                      )}
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="sidebar-footer">
+            <div className="user-profile-sidebar">
+              <div className="user-avatar-sidebar">
+                SK
+              </div>
+              {!isCollapsed && (
+                <div className="user-info-sidebar">
+                  <span className="user-name-sidebar">Sunil Kumar</span>
+                  <span className="user-email-sidebar">sunil.kumar@aurora.app</span>
+                </div>
+              )}
+              <button
+                className="sidebar-logout-btn"
+                aria-label="Logout"
+                onClick={() => alert('Logout functionality')}
+                title="Logout"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
     </>
   );
 };

@@ -163,6 +163,12 @@ button {
   object-fit: cover;
 }
 
+/* Sidebar Container */
+.sidebar-container {
+  position: relative;
+  display: flex;
+}
+
 /* Sidebar */
 .sidebar {
   width: 18rem;
@@ -176,12 +182,12 @@ button {
   transition: all 0.3s ease;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
   z-index: 50;
-  position: relative;
 }
 
 .sidebar.collapsed {
   width: 5rem;
 }
+
 
 /* Collapse Toggle Button */
 .sidebar-collapse-toggle {
