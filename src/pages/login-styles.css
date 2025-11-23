@@ -3,7 +3,11 @@
 /* Reset and Base Styles */
 .login-page {
   min-height: 100vh;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .login-page * {
@@ -14,7 +18,8 @@
 
 /* Background Animations */
 @keyframes blob {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   25% {
