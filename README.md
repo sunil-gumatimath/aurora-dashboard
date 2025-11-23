@@ -13,7 +13,6 @@ A modern, responsive employee management dashboard built with React, Vite, Tailw
 - **Supabase Backend** - Production-ready PostgreSQL database with real-time capabilities
 - **Performance Optimized** - React.memo, useCallback, lazy loading, and content visibility for lightning-fast performance
 
-
 ## Tech Stack
 
 - **React 19** - Frontend framework
@@ -23,7 +22,6 @@ A modern, responsive employee management dashboard built with React, Vite, Tailw
 - **Recharts** - Data visualization
 - **Lucide React** - Icons
 - **date-fns** - Date utilities
-
 
 ## Getting Started
 
@@ -73,6 +71,7 @@ src/
 ## Recent Updates
 
 **v1.4.0 - Authentication System** 🔐
+
 - ✅ Supabase Auth integration for secure login/signup
 - ✅ Auth context for global user state management
 - ✅ Protected routes - require login to access app
@@ -82,6 +81,7 @@ src/
 - ✅ Session persistence across page refreshes
 
 **v1.3.0 - Performance Optimization** ⚡
+
 - ✅ Implemented React.memo for employee cards
 - ✅ Added useCallback to prevent unnecessary re-renders
 - ✅ Debounced search input (300ms) for smoother typing
@@ -91,6 +91,7 @@ src/
 - 📖 See [`PERFORMANCE_OPTIMIZATIONS.md`](./PERFORMANCE_OPTIMIZATIONS.md) for details
 
 **v1.2.0 - Supabase Integration & CRUD Operations** 🎉
+
 - ✅ Integrated Supabase as backend database
 - ✅ Full CRUD operations for employees (Create, Read, Update, Delete)
 - ✅ Add Employee modal with form validation
@@ -102,12 +103,12 @@ src/
 - ✅ Refresh button for manual data sync
 
 **v1.1.0 - Polish & Refinement**
+
 - Implemented sharp, premium design language
 - Fixed sidebar toggle responsiveness
 - Updated to Indian Hindu names
 - Code cleanup and PropTypes validation
 - Removed stale documentation
-
 
 ## License
 
