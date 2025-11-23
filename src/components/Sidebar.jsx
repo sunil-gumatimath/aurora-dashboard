@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { Users, LayoutDashboard, Calendar, Settings, LogOut, ChevronRight, Menu, X, ChevronLeft } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 const Sidebar = ({ activeTab, onTabChange }) => {
+  const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -20,6 +22,33 @@ const Sidebar = ({ activeTab, onTabChange }) => {
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
+  };
+
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      await signOut();
+    }
+  };
+
+  // Get user display name
+  const getUserName = () => {
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name;
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
+
+  // Get user initials
+  const getUserInitials = () => {
+    const name = getUserName();
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -92,18 +121,18 @@ const Sidebar = ({ activeTab, onTabChange }) => {
           <div className="sidebar-footer">
             <div className="user-profile-sidebar">
               <div className="user-avatar-sidebar">
-                SK
+                {getUserInitials()}
               </div>
               {!isCollapsed && (
                 <div className="user-info-sidebar">
-                  <span className="user-name-sidebar">Sunil Kumar</span>
-                  <span className="user-email-sidebar">sunil.kumar@aurora.app</span>
+                  <span className="user-name-sidebar">{getUserName()}</span>
+                  <span className="user-email-sidebar">{user?.email}</span>
                 </div>
               )}
               <button
                 className="sidebar-logout-btn"
                 aria-label="Logout"
-                onClick={() => alert('Logout functionality')}
+                onClick={handleLogout}
                 title="Logout"
               >
                 <LogOut size={16} />
