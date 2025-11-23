@@ -1,22 +1,26 @@
 # Aurora - Employee Management System
 
-A modern, responsive employee management dashboard built with React, Vite, and Tailwind CSS.
+A modern, responsive employee management dashboard built with React, Vite, Tailwind CSS, and Supabase.
 
 ## Features
 
+- **Employee Management** - Full CRUD operations (Create, Read, Update, Delete) for employee records
+- **Real-time Search** - Instant search across names, roles, departments, and emails
 - **Analytics Dashboard** - Interactive charts tracking employee growth, department distribution, and performance
 - **Calendar View** - Manage team events and meetings with an integrated calendar
-- **Employee Management** - View and manage employee information with localized Indian names
 - **Settings** - Comprehensive profile, notification, system, and security settings
+- **Supabase Backend** - Production-ready PostgreSQL database with real-time capabilities
 
 ## Tech Stack
 
 - **React 19** - Frontend framework
 - **Vite 6** - Build tool
 - **Tailwind CSS 4** - Styling with custom design system
+- **Supabase** - Backend database and authentication
 - **Recharts** - Data visualization
 - **Lucide React** - Icons
 - **date-fns** - Date utilities
+
 
 ## Getting Started
 
@@ -29,7 +33,12 @@ cd react-browser
 
 # Install dependencies
 bun install
+
+# Set up Supabase (required for employee CRUD operations)
+# See SUPABASE_SETUP.md for detailed instructions
 ```
+
+> **⚠️ Important:** You need to configure Supabase before running the app. Follow the step-by-step guide in [`SUPABASE_SETUP.md`](./SUPABASE_SETUP.md).
 
 ### Development
 
@@ -60,12 +69,24 @@ src/
 
 ## Recent Updates
 
+**v1.2.0 - Supabase Integration & CRUD Operations** 🎉
+- ✅ Integrated Supabase as backend database
+- ✅ Full CRUD operations for employees (Create, Read, Update, Delete)
+- ✅ Add Employee modal with form validation
+- ✅ Edit Employee modal with pre-populated data
+- ✅ Delete confirmation modal
+- ✅ Real-time search and filtering
+- ✅ Toast notifications for user feedback
+- ✅ Loading states and error handling
+- ✅ Refresh button for manual data sync
+
 **v1.1.0 - Polish & Refinement**
 - Implemented sharp, premium design language
 - Fixed sidebar toggle responsiveness
 - Updated to Indian Hindu names
 - Code cleanup and PropTypes validation
 - Removed stale documentation
+
 
 ## License
 
