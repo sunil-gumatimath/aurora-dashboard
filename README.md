@@ -29,16 +29,12 @@ cd react-browser
 
 # Install dependencies
 bun install
-# or
-npm install
 ```
 
 ### Development
 
 ```bash
 bun run dev
-# or
-npm run dev
 ```
 
 Visit `http://localhost:3000`
@@ -47,8 +43,6 @@ Visit `http://localhost:3000`
 
 ```bash
 bun run build
-# or
-npm run build
 ```
 
 ## Project Structure
