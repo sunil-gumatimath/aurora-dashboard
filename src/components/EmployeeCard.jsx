@@ -1,5 +1,6 @@
 import React, { memo } from "react";
 import PropTypes from "prop-types";
+import { useNavigate } from "react-router-dom";
 import { Edit, Trash } from "lucide-react";
 
 /**
@@ -8,6 +9,8 @@ import { Edit, Trash } from "lucide-react";
  * Implements lazy loading for avatar images
  */
 const EmployeeCard = memo(({ employee, onEdit, onDelete }) => {
+  const navigate = useNavigate();
+
   const getStatusClass = (status) => {
     switch (status) {
       case "Active":
@@ -19,8 +22,33 @@ const EmployeeCard = memo(({ employee, onEdit, onDelete }) => {
     }
   };
 
+  const handleCardClick = () => {
+    navigate(`/employees/${employee.id}`);
+  };
+
+  const handleEdit = (e) => {
+    e.stopPropagation(); // Prevent card click
+    onEdit(employee);
+  };
+
+  const handleDelete = (e) => {
+    e.stopPropagation(); // Prevent card click
+    onDelete(employee);
+  };
+
   return (
-    <div className="card employee-card">
+    <div
+      className="card employee-card employee-card-clickable"
+      onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
+    >
       <div className="employee-card-header">
         <div className="employee-info">
           <img
@@ -57,7 +85,7 @@ const EmployeeCard = memo(({ employee, onEdit, onDelete }) => {
         <button
           type="button"
           className="employee-action-btn"
-          onClick={() => onEdit(employee)}
+          onClick={handleEdit}
         >
           <Edit size={16} />
           Edit
@@ -65,7 +93,7 @@ const EmployeeCard = memo(({ employee, onEdit, onDelete }) => {
         <button
           type="button"
           className="employee-action-btn danger"
-          onClick={() => onDelete(employee)}
+          onClick={handleDelete}
         >
           <Trash size={16} />
           Delete
