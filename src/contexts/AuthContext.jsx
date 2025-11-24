@@ -1,10 +1,12 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { authService } from "../services/authService";
 
 const AuthContext = createContext({});
 
-export const useAuth = () => {
+/* eslint-disable-next-line react-refresh/only-export-components */
+const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
@@ -12,6 +14,7 @@ export const useAuth = () => {
   return context;
 };
 
+// Provider component for authentication context
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
@@ -31,7 +34,6 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth changes
     const { subscription } = authService.onAuthStateChange(
       (event, newSession) => {
-        console.log("Auth state change:", event);
         setSession(newSession);
         setUser(newSession?.user ?? null);
       },
@@ -91,3 +93,5 @@ export const AuthProvider = ({ children }) => {
 AuthProvider.propTypes = {
   children: PropTypes.node.isRequired,
 };
+
+export { useAuth };
