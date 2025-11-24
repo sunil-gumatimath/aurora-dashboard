@@ -8,7 +8,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Header from "./components/Header";
 import LoadingSpinner from "./components/LoadingSpinner";
 import EmployeeDetailPage from "./pages/EmployeeDetailPage";
-import { useAuth } from "./contexts/AuthContext";
 
 const AnalyticsDashboard = React.lazy(
   () => import("./features/analytics/AnalyticsDashboard"),
@@ -19,7 +18,6 @@ const CalendarView = React.lazy(
 
 function App() {
   const location = useLocation();
-  const { user } = useAuth();
 
   // Determine active tab from current route
   const getActiveTab = () => {
