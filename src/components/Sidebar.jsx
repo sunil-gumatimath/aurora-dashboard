@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
+import { Link } from "react-router-dom";
 import {
   Users,
   LayoutDashboard,
@@ -13,22 +14,17 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
-const Sidebar = ({ activeTab, onTabChange }) => {
+const Sidebar = ({ activeTab }) => {
   const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
-    { icon: LayoutDashboard, label: "Analytics", id: "analytics" },
-    { icon: Users, label: "Employees", id: "employees" },
-    { icon: Calendar, label: "Calendar", id: "calendar" },
-    { icon: Settings, label: "Settings", id: "settings" },
+    { icon: LayoutDashboard, label: "Analytics", id: "analytics", path: "/analytics" },
+    { icon: Users, label: "Employees", id: "employees", path: "/employees" },
+    { icon: Calendar, label: "Calendar", id: "calendar", path: "/calendar" },
+    { icon: Settings, label: "Settings", id: "settings", path: "/settings" },
   ];
-
-  const handleTabChange = (tabId) => {
-    onTabChange(tabId);
-    setIsMobileMenuOpen(false); // Close mobile menu after selection
-  };
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -106,9 +102,10 @@ const Sidebar = ({ activeTab, onTabChange }) => {
             {menuItems.map((item) => {
               const Icon = item.icon;
               return (
-                <button
+                <Link
                   key={item.id}
-                  onClick={() => handleTabChange(item.id)}
+                  to={item.path}
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className={`nav-item ${activeTab === item.id ? "active" : ""}`}
                   title={isCollapsed ? item.label : ""}
                 >
@@ -124,7 +121,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
                       )}
                     </>
                   )}
-                </button>
+                </Link>
               );
             })}
           </nav>
@@ -156,7 +153,6 @@ const Sidebar = ({ activeTab, onTabChange }) => {
 
 Sidebar.propTypes = {
   activeTab: PropTypes.string.isRequired,
-  onTabChange: PropTypes.func.isRequired,
 };
 
 export default Sidebar;
