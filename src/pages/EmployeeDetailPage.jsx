@@ -16,10 +16,15 @@ import {
     StickyNote,
 } from "lucide-react";
 import { employeeService } from "../services/employeeService";
+import noteService from "../services/noteService";
+import documentService from "../services/documentService";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Toast from "../components/Toast";
 import EditEmployeeModal from "../components/EditEmployeeModal";
 import ConfirmModal from "../components/ConfirmModal";
+import DocumentList from "../components/DocumentList";
+import NotesList from "../components/NotesList";
+import MockDataBanner from "../components/MockDataBanner";
 import "./employee-detail-styles.css";
 
 const EmployeeDetailPage = () => {
@@ -31,9 +36,15 @@ const EmployeeDetailPage = () => {
     const [toast, setToast] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [documents, setDocuments] = useState([]);
+    const [notes, setNotes] = useState([]);
+    const [documentsLoading, setDocumentsLoading] = useState(true);
+    const [notesLoading, setNotesLoading] = useState(true);
 
     useEffect(() => {
         fetchEmployee();
+        fetchDocuments();
+        fetchNotes();
     }, [id]);
 
     const fetchEmployee = async () => {
@@ -51,6 +62,47 @@ const EmployeeDetailPage = () => {
         }
 
         setIsLoading(false);
+    };
+
+    const fetchDocuments = async () => {
+        setDocumentsLoading(true);
+        const { data } = await documentService.getByEmployeeId(parseInt(id));
+        setDocuments(data || []);
+        setDocumentsLoading(false);
+    };
+
+    const fetchNotes = async () => {
+        setNotesLoading(true);
+        const { data } = await noteService.getByEmployeeId(parseInt(id));
+        setNotes(data || []);
+        setNotesLoading(false);
+    };
+
+    const handleDocumentAdded = (document) => {
+        setDocuments((prev) => [document, ...prev]);
+        setToast({ type: "success", message: "Document uploaded successfully!" });
+    };
+
+    const handleDocumentDeleted = async (documentId) => {
+        await documentService.delete(documentId);
+        setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+        setToast({ type: "success", message: "Document deleted successfully!" });
+    };
+
+    const handleNoteAdded = (note) => {
+        setNotes((prev) => [note, ...prev]);
+        setToast({ type: "success", message: "Note added successfully!" });
+    };
+
+    const handleNoteUpdated = (updatedNote) => {
+        setNotes((prev) => prev.map((n) => (n.id === updatedNote.id ? updatedNote : n)));
+        setToast({ type: "success", message: "Note updated successfully!" });
+    };
+
+    const handleNoteDeleted = async (noteId) => {
+        await noteService.delete(noteId);
+        setNotes((prev) => prev.filter((n) => n.id !== noteId));
+        setToast({ type: "success", message: "Note deleted successfully!" });
     };
 
     const handleEditEmployee = async (employeeId, updates) => {
@@ -322,18 +374,26 @@ const EmployeeDetailPage = () => {
                 </div>
             </div>
 
-            {/* Documents and Notes Placeholders */}
+            {/* Mock Data Banner */}
+            <MockDataBanner />
+
+            {/* Documents and Notes */}
             <div className="employee-detail-grid-2">
-                <div className="card employee-detail-section coming-soon">
-                    <FileText className="coming-soon-icon" />
-                    <h3 className="section-title">Documents</h3>
-                    <p className="coming-soon-text">Documents feature coming soon...</p>
-                </div>
-                <div className="card employee-detail-section coming-soon">
-                    <StickyNote className="coming-soon-icon" />
-                    <h3 className="section-title">Notes</h3>
-                    <p className="coming-soon-text">Notes feature coming soon...</p>
-                </div>
+                <DocumentList
+                    employeeId={employee.id}
+                    documents={documents}
+                    onDocumentAdded={handleDocumentAdded}
+                    onDocumentDeleted={handleDocumentDeleted}
+                    isLoading={documentsLoading}
+                />
+                <NotesList
+                    employeeId={employee.id}
+                    notes={notes}
+                    onNoteAdded={handleNoteAdded}
+                    onNoteUpdated={handleNoteUpdated}
+                    onNoteDeleted={handleNoteDeleted}
+                    isLoading={notesLoading}
+                />
             </div>
 
             {/* Edit Employee Modal */}
