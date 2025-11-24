@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { X, AlertCircle } from 'lucide-react';
 import noteService from '../services/noteService';
@@ -13,25 +13,26 @@ const CATEGORIES = [
 ];
 
 const EditNoteModal = ({ isOpen, note, onClose, onNoteUpdated }) => {
-    const [formData, setFormData] = useState({
-        title: '',
-        content: '',
-        category: 'general',
-        is_private: false,
-    });
-    const [errors, setErrors] = useState({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    useEffect(() => {
+    const initialFormData = useMemo(() => {
         if (note) {
-            setFormData({
+            return {
                 title: note.title || '',
                 content: note.content || '',
                 category: note.category || 'general',
                 is_private: note.is_private || false,
-            });
+            };
         }
+        return {
+            title: '',
+            content: '',
+            category: 'general',
+            is_private: false,
+        };
     }, [note]);
+
+    const [formData, setFormData] = useState(initialFormData);
+    const [errors, setErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const validateForm = () => {
         const newErrors = {};
