@@ -7,6 +7,7 @@ import EditEmployeeModal from "../../components/EditEmployeeModal";
 import ConfirmModal from "../../components/ConfirmModal";
 import Toast from "../../components/Toast";
 import EmployeeCard from "../../components/EmployeeCard";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const EmployeeList = () => {
   const [employees, setEmployees] = useState([]);
@@ -174,12 +175,7 @@ const EmployeeList = () => {
   if (isLoading) {
     return (
       <div className="employees-container">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-gray-500">Loading employees...</p>
-          </div>
-        </div>
+        <LoadingSpinner size="lg" message="Loading employees..." />
       </div>
     );
   }

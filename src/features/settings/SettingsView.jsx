@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { User, Bell, Shield, Palette, Save, AlertCircle } from "lucide-react";
 import Toast from "../../components/Toast";
 import "./settings-styles.css";
@@ -20,7 +20,6 @@ const SettingsView = () => {
       newEmployeeAlerts: true,
       systemUpdates: true,
       weeklyReports: false,
-      theme: "light",
       language: "en",
       timezone: "Asia/Kolkata",
       autoBackup: true,
@@ -41,28 +40,7 @@ const SettingsView = () => {
     { id: "security", label: "Security", icon: Shield },
   ];
 
-  // Apply theme changes to document
-  useEffect(() => {
-    const applyTheme = () => {
-      let theme = settings.theme;
-      if (theme === "auto") {
-        theme = window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light";
-      }
-      document.documentElement.setAttribute("data-theme", theme);
-    };
 
-    applyTheme();
-
-    // Listen for system theme changes if in auto mode
-    if (settings.theme === "auto") {
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      const handleChange = () => applyTheme();
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-  }, [settings.theme]);
 
   const updateSetting = (field, value) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
@@ -178,6 +156,7 @@ const SettingsView = () => {
                   onChange={(e) => updateSetting("name", e.target.value)}
                   className={`settings-input ${errors.name ? "error" : ""}`}
                   placeholder="Enter your full name"
+                  aria-invalid={errors.name ? "true" : "false"}
                 />
                 {errors.name && (
                   <p className="settings-error-message">
@@ -195,6 +174,7 @@ const SettingsView = () => {
                   onChange={(e) => updateSetting("email", e.target.value)}
                   className={`settings-input ${errors.email ? "error" : ""}`}
                   placeholder="Enter your email"
+                  aria-invalid={errors.email ? "true" : "false"}
                 />
                 {errors.email && (
                   <p className="settings-error-message">
@@ -250,11 +230,14 @@ const SettingsView = () => {
             ].map(({ key, label, desc }) => (
               <div key={key} className="settings-toggle-wrapper">
                 <div>
-                  <p className="font-medium text-gray-900">{label}</p>
-                  <p className="text-sm text-gray-500">{desc}</p>
+                  <label className="font-medium text-main" htmlFor={key}>
+                    {label}
+                  </label>
+                  <p className="text-sm text-muted">{desc}</p>
                 </div>
-                <label className="settings-toggle-label">
+                <label className="settings-toggle-label" htmlFor={key}>
                   <input
+                    id={key}
                     type="checkbox"
                     checked={settings[key]}
                     disabled={isSaving}
@@ -273,19 +256,6 @@ const SettingsView = () => {
         return (
           <div className="settings-section">
             <div className="settings-grid">
-              <div className="settings-form-group">
-                <label className="settings-label">Theme</label>
-                <select
-                  value={settings.theme}
-                  disabled={isSaving}
-                  onChange={(e) => updateSetting("theme", e.target.value)}
-                  className="settings-select"
-                >
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                  <option value="auto">Auto</option>
-                </select>
-              </div>
 
               <div className="settings-form-group">
                 <label className="settings-label">Language</label>
@@ -337,11 +307,14 @@ const SettingsView = () => {
 
             <div className="settings-toggle-wrapper">
               <div>
-                <p className="font-medium text-gray-900">Automatic backups</p>
-                <p className="text-sm text-gray-500">Daily data backup</p>
+                <label className="font-medium text-main" htmlFor="autoBackup">
+                  Automatic backups
+                </label>
+                <p className="text-sm text-muted">Daily data backup</p>
               </div>
-              <label className="settings-toggle-label">
+              <label className="settings-toggle-label" htmlFor="autoBackup">
                 <input
+                  id="autoBackup"
                   type="checkbox"
                   checked={settings.autoBackup}
                   disabled={isSaving}
@@ -371,6 +344,7 @@ const SettingsView = () => {
                 }
                 className={`settings-input ${errors.currentPassword ? "error" : ""}`}
                 placeholder="Enter current password"
+                aria-invalid={errors.currentPassword ? "true" : "false"}
               />
               {errors.currentPassword && (
                 <p className="settings-error-message">
@@ -388,6 +362,7 @@ const SettingsView = () => {
                 onChange={(e) => updateSetting("newPassword", e.target.value)}
                 className={`settings-input ${errors.newPassword ? "error" : ""}`}
                 placeholder="Enter new password"
+                aria-invalid={errors.newPassword ? "true" : "false"}
               />
               {errors.newPassword && (
                 <p className="settings-error-message">
@@ -407,6 +382,7 @@ const SettingsView = () => {
                 }
                 className={`settings-input ${errors.confirmPassword ? "error" : ""}`}
                 placeholder="Confirm new password"
+                aria-invalid={errors.confirmPassword ? "true" : "false"}
               />
               {errors.confirmPassword && (
                 <p className="settings-error-message">
@@ -417,13 +393,14 @@ const SettingsView = () => {
 
             <div className="settings-toggle-wrapper">
               <div>
-                <p className="font-medium text-gray-900">
+                <label className="font-medium text-main" htmlFor="twoFactorAuth">
                   Two-factor authentication
-                </p>
-                <p className="text-sm text-gray-500">Extra security layer</p>
+                </label>
+                <p className="text-sm text-muted">Extra security layer</p>
               </div>
-              <label className="settings-toggle-label">
+              <label className="settings-toggle-label" htmlFor="twoFactorAuth">
                 <input
+                  id="twoFactorAuth"
                   type="checkbox"
                   checked={settings.twoFactorAuth}
                   disabled={isSaving}

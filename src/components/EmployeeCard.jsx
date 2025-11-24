@@ -1,5 +1,6 @@
 import React, { memo } from "react";
 import PropTypes from "prop-types";
+import { Edit, Trash } from "lucide-react";
 
 /**
  * Optimized Employee Card Component
@@ -58,6 +59,7 @@ const EmployeeCard = memo(({ employee, onEdit, onDelete }) => {
           className="employee-action-btn"
           onClick={() => onEdit(employee)}
         >
+          <Edit size={16} />
           Edit
         </button>
         <button
@@ -65,6 +67,7 @@ const EmployeeCard = memo(({ employee, onEdit, onDelete }) => {
           className="employee-action-btn danger"
           onClick={() => onDelete(employee)}
         >
+          <Trash size={16} />
           Delete
         </button>
       </div>

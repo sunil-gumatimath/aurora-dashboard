@@ -4,6 +4,7 @@ import Stats from "./components/Stats";
 import EmployeeList from "./features/employees/EmployeeList";
 import SettingsView from "./features/settings/SettingsView";
 import ProtectedRoute from "./components/ProtectedRoute";
+import LoadingSpinner from "./components/LoadingSpinner";
 import { useAuth } from "./contexts/AuthContext";
 
 const AnalyticsDashboard = React.lazy(
@@ -13,11 +14,7 @@ const CalendarView = React.lazy(
   () => import("./features/calendar/CalendarView"),
 );
 
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center h-64">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-  </div>
-);
+
 
 function App() {
   const [activeTab, setActiveTab] = useState("employees");
@@ -59,10 +56,10 @@ function App() {
               <button className="icon-btn">🔔</button>
               <div className="user-profile">
                 <div className="text-right hidden sm:block">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-main">
                     {getUserName()}
                   </p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
+                  <p className="text-xs text-muted">{user?.email}</p>
                 </div>
                 <img
                   src={`https://api.dicebear.com/9.x/micah/svg?seed=${getAvatarSeed()}`}
@@ -81,13 +78,13 @@ function App() {
           )}
 
           {activeTab === "analytics" && (
-            <Suspense fallback={<LoadingSpinner />}>
+            <Suspense fallback={<LoadingSpinner size="lg" message="Loading analytics..." />}>
               <AnalyticsDashboard />
             </Suspense>
           )}
 
           {activeTab === "calendar" && (
-            <Suspense fallback={<LoadingSpinner />}>
+            <Suspense fallback={<LoadingSpinner size="lg" message="Loading calendar..." />}>
               <CalendarView />
             </Suspense>
           )}
@@ -95,7 +92,7 @@ function App() {
           {activeTab === "settings" && <SettingsView />}
 
           {!validTabs.includes(activeTab) && (
-            <div className="flex items-center justify-center h-64 text-gray-500">
+            <div className="flex items-center justify-center h-64 text-muted">
               {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} module
               coming soon...
             </div>
