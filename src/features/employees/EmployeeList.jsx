@@ -36,10 +36,33 @@ const EmployeeList = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  const fetchEmployees = useCallback(async (showRefresh = false) => {
+    if (showRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+
+    const { data, error } = await employeeService.getAll();
+
+    if (error) {
+      setToast({
+        type: "error",
+        message: "Failed to load employees. Please try again.",
+      });
+      setEmployees([]);
+    } else {
+      setEmployees(data || []);
+    }
+
+    setIsLoading(false);
+    setIsRefreshing(false);
+  }, []);
+
   // Fetch employees on mount
   useEffect(() => {
     fetchEmployees();
-  }, []);
+  }, [fetchEmployees]);
 
   // Supabase Realtime subscription for live updates
   useEffect(() => {
@@ -54,8 +77,6 @@ const EmployeeList = () => {
           table: 'employees',
         },
         (payload) => {
-          console.log('Real-time update received:', payload);
-
           // Refresh the employee list when any change occurs
           fetchEmployees(true); // Use refresh mode to show subtle loading
 
@@ -84,30 +105,7 @@ const EmployeeList = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
-
-  const fetchEmployees = useCallback(async (showRefresh = false) => {
-    if (showRefresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-
-    const { data, error } = await employeeService.getAll();
-
-    if (error) {
-      setToast({
-        type: "error",
-        message: "Failed to load employees. Please try again.",
-      });
-      setEmployees([]);
-    } else {
-      setEmployees(data || []);
-    }
-
-    setIsLoading(false);
-    setIsRefreshing(false);
-  }, []);
+  }, [fetchEmployees]);
 
   // Search/filter employees with debounced search term
   const filteredEmployees = useMemo(() => {
@@ -183,7 +181,7 @@ const EmployeeList = () => {
 
     setActionLoading(true);
 
-    const { success, error } = await employeeService.delete(
+    const { error } = await employeeService.delete(
       selectedEmployee.id,
     );
 
