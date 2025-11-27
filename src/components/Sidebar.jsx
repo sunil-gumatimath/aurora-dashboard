@@ -8,8 +8,6 @@ import {
   Settings,
   LogOut,
   ChevronRight,
-  Menu,
-  X,
   ChevronLeft,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
