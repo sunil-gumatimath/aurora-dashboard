@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
     ArrowLeft,
@@ -25,12 +25,14 @@ import noteService from "../services/noteService";
 import documentService from "../services/documentService";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Toast from "../components/Toast";
-import EditEmployeeModal from "../components/EditEmployeeModal";
-import ConfirmModal from "../components/ConfirmModal";
 import DocumentList from "../components/DocumentList";
 import NotesList from "../components/NotesList";
 import MockDataBanner from "../components/MockDataBanner";
 import "./employee-detail-styles.css";
+
+// Lazy load modals - they're only needed on user interaction
+const EditEmployeeModal = lazy(() => import("../components/EditEmployeeModal"));
+const ConfirmModal = lazy(() => import("../components/ConfirmModal"));
 
 const EmployeeDetailPage = () => {
     const { id } = useParams();
@@ -461,26 +463,30 @@ const EmployeeDetailPage = () => {
             </div>
 
             {/* Edit Employee Modal */}
-            <EditEmployeeModal
-                isOpen={showEditModal}
-                employee={employee}
-                onClose={() => setShowEditModal(false)}
-                onSubmit={handleEditEmployee}
-                isLoading={actionLoading}
-            />
+            <Suspense fallback={null}>
+                <EditEmployeeModal
+                    isOpen={showEditModal}
+                    employee={employee}
+                    onClose={() => setShowEditModal(false)}
+                    onSubmit={handleEditEmployee}
+                    isLoading={actionLoading}
+                />
+            </Suspense>
 
             {/* Delete Confirmation Modal */}
-            <ConfirmModal
-                isOpen={showDeleteModal}
-                title="Delete Employee"
-                message={`Are you sure you want to delete ${employee?.name}? This action cannot be undone.`}
-                confirmText="Delete"
-                cancelText="Cancel"
-                onConfirm={handleDeleteEmployee}
-                onCancel={() => setShowDeleteModal(false)}
-                isLoading={actionLoading}
-                variant="danger"
-            />
+            <Suspense fallback={null}>
+                <ConfirmModal
+                    isOpen={showDeleteModal}
+                    title="Delete Employee"
+                    message={`Are you sure you want to delete ${employee?.name}? This action cannot be undone.`}
+                    confirmText="Delete"
+                    cancelText="Cancel"
+                    onConfirm={handleDeleteEmployee}
+                    onCancel={() => setShowDeleteModal(false)}
+                    isLoading={actionLoading}
+                    variant="danger"
+                />
+            </Suspense>
 
             {/* Toast Notifications */}
             {toast && (

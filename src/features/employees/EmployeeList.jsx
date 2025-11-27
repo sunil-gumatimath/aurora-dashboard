@@ -1,14 +1,16 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from "react";
 import { UserPlus, Users, RefreshCw } from "lucide-react";
 import "./employees-styles.css";
 import { employeeService } from "../../services/employeeService";
 import { supabase } from "../../lib/supabase";
-import AddEmployeeModal from "../../components/AddEmployeeModal";
-import EditEmployeeModal from "../../components/EditEmployeeModal";
-import ConfirmModal from "../../components/ConfirmModal";
 import Toast from "../../components/Toast";
 import EmployeeCard from "../../components/EmployeeCard";
 import LoadingSpinner from "../../components/LoadingSpinner";
+
+// Lazy load modals for better performance
+const AddEmployeeModal = lazy(() => import("../../components/AddEmployeeModal"));
+const EditEmployeeModal = lazy(() => import("../../components/EditEmployeeModal"));
+const ConfirmModal = lazy(() => import("../../components/ConfirmModal"));
 
 const EmployeeList = () => {
   const [employees, setEmployees] = useState([]);
@@ -284,40 +286,46 @@ const EmployeeList = () => {
       )}
 
       {/* Add Employee Modal */}
-      <AddEmployeeModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSubmit={handleAddEmployee}
-        isLoading={actionLoading}
-      />
+      <Suspense fallback={null}>
+        <AddEmployeeModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSubmit={handleAddEmployee}
+          isLoading={actionLoading}
+        />
+      </Suspense>
 
       {/* Edit Employee Modal */}
-      <EditEmployeeModal
-        isOpen={showEditModal}
-        employee={selectedEmployee}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedEmployee(null);
-        }}
-        onSubmit={handleEditEmployee}
-        isLoading={actionLoading}
-      />
+      <Suspense fallback={null}>
+        <EditEmployeeModal
+          isOpen={showEditModal}
+          employee={selectedEmployee}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedEmployee(null);
+          }}
+          onSubmit={handleEditEmployee}
+          isLoading={actionLoading}
+        />
+      </Suspense>
 
       {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showDeleteModal}
-        title="Delete Employee"
-        message={`Are you sure you want to delete ${selectedEmployee?.name}? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        onConfirm={handleDeleteEmployee}
-        onCancel={() => {
-          setShowDeleteModal(false);
-          setSelectedEmployee(null);
-        }}
-        isLoading={actionLoading}
-        variant="danger"
-      />
+      <Suspense fallback={null}>
+        <ConfirmModal
+          isOpen={showDeleteModal}
+          title="Delete Employee"
+          message={`Are you sure you want to delete ${selectedEmployee?.name}? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={handleDeleteEmployee}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setSelectedEmployee(null);
+          }}
+          isLoading={actionLoading}
+          variant="danger"
+        />
+      </Suspense>
 
       {/* Toast Notifications */}
       {toast && (
