@@ -674,7 +674,8 @@ button {
   position: fixed;
   top: 1rem;
   left: 1rem;
-  z-index: 60;
+  z-index: 56;
+  /* Above sidebar (50) and overlay (55), but manageable */
   background: var(--primary);
   color: white;
   border: none;
@@ -700,8 +701,11 @@ button {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 40;
+  z-index: 55;
+  /* Above sidebar (50) but below menu button (60) */
   animation: fadeIn 0.2s ease-out;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 /* Responsive Styles */
@@ -723,8 +727,13 @@ button {
     justify-content: center;
   }
 
+  /* Only show overlay when menu is open - handled by React */
   .mobile-overlay {
     display: block;
+    z-index: 45;
+    /* Must be between nothing and sidebar content */
+    pointer-events: auto;
+    /* Ensure it can receive clicks */
   }
 
   .sidebar {
@@ -1292,3 +1301,45 @@ textarea:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+/* Mobile Menu Button in Header */
+.mobile-menu-btn-header {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-right: 1rem;
+  transition: all 0.2s ease;
+  border-radius: var(--radius-md);
+}
+
+.mobile-menu-btn-header:hover {
+  background: var(--bg-body);
+  color: var(--primary);
+}
+
+.mobile-menu-btn-header:active {
+  transform: scale(0.95);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Hide old floating button */
+.mobile-menu-button {
+  display: none !important;
+}
+
+/* Show header button on mobile */
+@media (max-width: 1024px) {
+  .mobile-menu-btn-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+

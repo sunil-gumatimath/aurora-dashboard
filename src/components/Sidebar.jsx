@@ -14,9 +14,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
-const Sidebar = ({ activeTab }) => {
+const Sidebar = ({ activeTab, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { user, signOut } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
@@ -59,23 +58,6 @@ const Sidebar = ({ activeTab }) => {
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <button
-        className="mobile-menu-button"
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        aria-label="Toggle menu"
-      >
-        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-
-      {/* Mobile Overlay */}
-      {isMobileMenuOpen && (
-        <div
-          className="mobile-overlay"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
       {/* Sidebar Container */}
       <div className="sidebar-container">
         {/* Collapse Toggle Button (Desktop only) */}
@@ -147,12 +129,22 @@ const Sidebar = ({ activeTab }) => {
           </div>
         </aside>
       </div>
+
+      {/* Mobile Overlay - Render AFTER sidebar so it's on top */}
+      {isMobileMenuOpen && (
+        <div
+          className="mobile-overlay"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
     </>
   );
 };
 
 Sidebar.propTypes = {
   activeTab: PropTypes.string.isRequired,
+  isMobileMenuOpen: PropTypes.bool.isRequired,
+  setIsMobileMenuOpen: PropTypes.func.isRequired,
 };
 
 export default Sidebar;

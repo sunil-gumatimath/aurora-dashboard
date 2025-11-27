@@ -18,6 +18,7 @@ const CalendarView = React.lazy(
 
 function App() {
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   // Determine active tab from current route
   const getActiveTab = () => {
@@ -31,13 +32,26 @@ function App() {
 
   const activeTab = getActiveTab();
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  // Close mobile menu when route changes
+  React.useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
   return (
     <ProtectedRoute>
       <div className="app-container">
-        <Sidebar activeTab={activeTab} />
+        <Sidebar
+          activeTab={activeTab}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         <main className="main-content">
-          <Header />
+          <Header onMobileMenuToggle={toggleMobileMenu} />
 
           <Routes>
             <Route path="/" element={<Navigate to="/analytics" replace />} />

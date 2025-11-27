@@ -1,8 +1,10 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import PropTypes from 'prop-types';
 
-const Header = () => {
+const Header = ({ onMobileMenuToggle }) => {
     const location = useLocation();
     const { user } = useAuth();
 
@@ -45,9 +47,20 @@ const Header = () => {
 
     return (
         <header className="app-header">
-            <div>
-                <h2 className="page-title">{getPageTitle()}</h2>
-                <p className="page-subtitle">Welcome back, {getUserName()}</p>
+            <div className="header-left">
+                {/* Mobile Menu Button - Only visible on mobile */}
+                <button
+                    className="mobile-menu-btn-header"
+                    onClick={onMobileMenuToggle}
+                    aria-label="Toggle menu"
+                >
+                    <Menu size={24} />
+                </button>
+
+                <div>
+                    <h2 className="page-title">{getPageTitle()}</h2>
+                    <p className="page-subtitle">Welcome back, {getUserName()}</p>
+                </div>
             </div>
 
             <div className="header-actions">
@@ -68,6 +81,10 @@ const Header = () => {
             </div>
         </header>
     );
+};
+
+Header.propTypes = {
+    onMobileMenuToggle: PropTypes.func,
 };
 
 export default Header;
