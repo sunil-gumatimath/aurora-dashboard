@@ -668,33 +668,6 @@ button {
   background: #fef2f2;
 }
 
-/* Mobile Menu Button */
-.mobile-menu-button {
-  display: none;
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 56;
-  /* Above sidebar (50) and overlay (55), but manageable */
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: var(--space-sm);
-  cursor: pointer;
-  box-shadow: var(--shadow-md);
-  transition: all 0.2s ease;
-}
-
-.mobile-menu-button:hover {
-  background: var(--primary-hover);
-  transform: scale(1.05);
-}
-
-.mobile-menu-button:active {
-  transform: scale(0.95);
-}
-
 /* Mobile Overlay */
 .mobile-overlay {
   display: none;
@@ -1301,6 +1274,7 @@ textarea:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
 /* Mobile Menu Button in Header */
 .mobile-menu-btn-header {
   display: none;
@@ -1329,11 +1303,6 @@ textarea:focus-visible {
   gap: 0.5rem;
 }
 
-/* Hide old floating button */
-.mobile-menu-button {
-  display: none !important;
-}
-
 /* Show header button on mobile */
 @media (max-width: 1024px) {
   .mobile-menu-btn-header {
@@ -1342,4 +1311,3 @@ textarea:focus-visible {
     justify-content: center;
   }
 }
-
