@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from "react";
+import React, { useState, useEffect, Suspense, lazy, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
     ArrowLeft,
@@ -19,6 +19,14 @@ import {
     TrendingDown,
     ChevronRight,
     Star,
+    Phone,
+    MapPin,
+    Hash,
+    User,
+    Download,
+    Target,
+    BookOpen,
+    Zap,
 } from "lucide-react";
 import { employeeService } from "../services/employeeService";
 import noteService from "../services/noteService";
@@ -48,6 +56,8 @@ const EmployeeDetailPage = () => {
     const [documentsLoading, setDocumentsLoading] = useState(true);
     const [notesLoading, setNotesLoading] = useState(true);
     const [copiedField, setCopiedField] = useState(null);
+    const [activeTab, setActiveTab] = useState("overview");
+    const contentRef = useRef(null);
 
     const fetchEmployee = async () => {
         setIsLoading(true);
@@ -80,13 +90,13 @@ const EmployeeDetailPage = () => {
         setNotesLoading(false);
     };
 
-    /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         fetchEmployee();
         fetchDocuments();
         fetchNotes();
     }, [id]);
-    /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     const handleDocumentAdded = (document) => {
         setDocuments((prev) => [document, ...prev]);
@@ -199,7 +209,15 @@ const EmployeeDetailPage = () => {
         }
     };
 
-    // Mock employment history (can be extended with real data from database)
+    // Mock additional contact info (these can be added to database schema)
+    const contactInfo = {
+        phone: "+91 98765 43210",
+        location: "Mumbai, India",
+        employeeId: `EMP${String(employee?.id || 0).padStart(4, '0')}`,
+        manager: "Rahul Sharma",
+    };
+
+    // Mock employment history with multiple positions
     const employmentHistory = [
         {
             id: 1,
@@ -208,7 +226,27 @@ const EmployeeDetailPage = () => {
             startDate: employee?.join_date || new Date().toISOString().split("T")[0],
             endDate: null,
             isCurrent: true,
+            description: "Leading the team and driving key initiatives for the department.",
         },
+        {
+            id: 2,
+            title: "Associate " + (employee?.role || "Position"),
+            department: employee?.department || "Department",
+            startDate: "2021-03-15",
+            endDate: employee?.join_date || new Date().toISOString().split("T")[0],
+            isCurrent: false,
+            description: "Contributed to multiple successful projects and demonstrated strong technical skills.",
+        },
+    ];
+
+    // Mock skills & competencies
+    const skills = [
+        { id: 1, name: "JavaScript", level: 95, category: "technical" },
+        { id: 2, name: "React", level: 90, category: "technical" },
+        { id: 3, name: "Node.js", level: 85, category: "technical" },
+        { id: 4, name: "Leadership", level: 88, category: "soft" },
+        { id: 5, name: "Communication", level: 92, category: "soft" },
+        { id: 6, name: "Problem Solving", level: 90, category: "soft" },
     ];
 
     // Mock stats (can be calculated from real data)
@@ -240,7 +278,332 @@ const EmployeeDetailPage = () => {
             trend: "+5%",
             trendDirection: "up",
         },
+        {
+            id: 4,
+            label: "Team Rating",
+            value: "4.8/5",
+            icon: <Star className="stat-icon" />,
+            color: "warning",
+            trend: "+0.3",
+            trendDirection: "up",
+        },
     ];
+
+    // Export to PDF function
+    const exportToPDF = async () => {
+        try {
+            setToast({ type: "info", message: "Preparing PDF export..." });
+
+            const content = `
+EMPLOYEE PROFILE EXPORT
+${'='.repeat(50)}
+
+Personal Information:
+Name: ${employee.name}
+Employee ID: ${contactInfo.employeeId}
+Email: ${employee.email}
+Phone: ${contactInfo.phone}
+Location: ${contactInfo.location}
+
+Employment Details:
+Role: ${employee.role}
+Department: ${employee.department}
+Status: ${employee.status}
+Join Date: ${new Date(employee.join_date).toLocaleDateString()}
+Time with Company: ${getEmploymentDuration(employee.join_date)}
+Reporting Manager: ${contactInfo.manager}
+
+Performance Statistics:
+${stats.map(s => `${s.label}: ${s.value} ${s.trend || ''}`).join('\n')}
+
+Skills & Competencies:
+${skills.map(s => `${s.name}: ${s.level}%`).join('\n')}
+
+Employment History:
+${employmentHistory.map(h => `${h.title} - ${h.department} (${h.startDate} to ${h.endDate || 'Present'})`).join('\n')}
+
+Documents: ${documents.length}
+Notes: ${notes.length}
+
+Exported on: ${new Date().toLocaleString()}
+            `;
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${employee.name.replace(/\s+/g, '_')}_Profile.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            setToast({ type: "success", message: "Profile exported successfully!" });
+        } catch (error) {
+            setToast({ type: "error", message: "Failed to export profile" });
+        }
+    };
+
+    const renderTabContent = () => {
+        switch (activeTab) {
+            case "overview":
+                return (
+                    <>
+                        {/* Contact Information */}
+                        <div className="card employee-detail-section">
+                            <h2 className="section-title">Contact Information</h2>
+                            <div className="employee-detail-grid">
+                                <div className="detail-item">
+                                    <Mail className="detail-icon" />
+                                    <div className="detail-content">
+                                        <p className="detail-label">Email</p>
+                                        <p className="detail-value">{employee.email}</p>
+                                    </div>
+                                    <button
+                                        className="copy-btn"
+                                        onClick={() => copyToClipboard(employee.email, "email")}
+                                        title="Copy email"
+                                    >
+                                        {copiedField === "email" ? (
+                                            <Check size={18} className="copy-icon success" />
+                                        ) : (
+                                            <Copy size={18} className="copy-icon" />
+                                        )}
+                                    </button>
+                                </div>
+                                <div className="detail-item">
+                                    <Phone className="detail-icon" />
+                                    <div className="detail-content">
+                                        <p className="detail-label">Phone</p>
+                                        <p className="detail-value">{contactInfo.phone}</p>
+                                    </div>
+                                    <button
+                                        className="copy-btn"
+                                        onClick={() => copyToClipboard(contactInfo.phone, "phone")}
+                                        title="Copy phone"
+                                    >
+                                        {copiedField === "phone" ? (
+                                            <Check size={18} className="copy-icon success" />
+                                        ) : (
+                                            <Copy size={18} className="copy-icon" />
+                                        )}
+                                    </button>
+                                </div>
+                                <div className="detail-item">
+                                    <MapPin className="detail-icon" />
+                                    <div className="detail-content">
+                                        <p className="detail-label">Location</p>
+                                        <p className="detail-value">{contactInfo.location}</p>
+                                    </div>
+                                </div>
+                                <div className="detail-item">
+                                    <Hash className="detail-icon" />
+                                    <div className="detail-content">
+                                        <p className="detail-label">Employee ID</p>
+                                        <p className="detail-value">{contactInfo.employeeId}</p>
+                                    </div>
+                                    <button
+                                        className="copy-btn"
+                                        onClick={() => copyToClipboard(contactInfo.employeeId, "id")}
+                                        title="Copy ID"
+                                    >
+                                        {copiedField === "id" ? (
+                                            <Check size={18} className="copy-icon success" />
+                                        ) : (
+                                            <Copy size={18} className="copy-icon" />
+                                        )}
+                                    </button>
+                                </div>
+                                <div className="detail-item">
+                                    <Building2 className="detail-icon" />
+                                    <div className="detail-content">
+                                        <p className="detail-label">Department</p>
+                                        <p className="detail-value">{employee.department}</p>
+                                    </div>
+                                </div>
+                                <div className="detail-item">
+                                    <Briefcase className="detail-icon" />
+                                    <div className="detail-content">
+                                        <p className="detail-label">Role</p>
+                                        <p className="detail-value">{employee.role}</p>
+                                    </div>
+                                </div>
+                                <div className="detail-item">
+                                    <User className="detail-icon" />
+                                    <div className="detail-content">
+                                        <p className="detail-label">Reporting Manager</p>
+                                        <p className="detail-value">{contactInfo.manager}</p>
+                                    </div>
+                                </div>
+                                <div className="detail-item">
+                                    <Calendar className="detail-icon" />
+                                    <div className="detail-content">
+                                        <p className="detail-label">Join Date</p>
+                                        <p className="detail-value">
+                                            {employee.join_date
+                                                ? new Date(employee.join_date).toLocaleDateString("en-US", {
+                                                    year: "numeric",
+                                                    month: "long",
+                                                    day: "numeric",
+                                                })
+                                                : "N/A"}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Statistics */}
+                        <div className="card employee-detail-section">
+                            <h2 className="section-title">Performance Statistics</h2>
+                            <div className="stats-grid">
+                                {stats.map((stat) => (
+                                    <div key={stat.id} className={`stat-card stat-${stat.color}`}>
+                                        <div className="stat-icon-wrapper">
+                                            {stat.icon}
+                                        </div>
+                                        <div className="stat-content">
+                                            <p className="stat-value">{stat.value}</p>
+                                            <p className="stat-label">{stat.label}</p>
+                                            {stat.trend && (
+                                                <div className={`stat-trend ${stat.trendDirection}`}>
+                                                    {stat.trendDirection === "up" ? (
+                                                        <TrendingUp size={14} />
+                                                    ) : (
+                                                        <TrendingDown size={14} />
+                                                    )}
+                                                    <span>{stat.trend}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Skills & Competencies */}
+                        <div className="card employee-detail-section">
+                            <h2 className="section-title">
+                                <Target size={20} />
+                                Skills & Competencies
+                            </h2>
+                            <div className="skills-container">
+                                <div className="skills-category">
+                                    <h3 className="skills-category-title">
+                                        <Zap size={18} />
+                                        Technical Skills
+                                    </h3>
+                                    <div className="skills-list">
+                                        {skills.filter(s => s.category === "technical").map(skill => (
+                                            <div key={skill.id} className="skill-item">
+                                                <div className="skill-header">
+                                                    <span className="skill-name">{skill.name}</span>
+                                                    <span className="skill-percentage">{skill.level}%</span>
+                                                </div>
+                                                <div className="skill-bar">
+                                                    <div
+                                                        className="skill-progress"
+                                                        style={{ width: `${skill.level}%` }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="skills-category">
+                                    <h3 className="skills-category-title">
+                                        <BookOpen size={18} />
+                                        Soft Skills
+                                    </h3>
+                                    <div className="skills-list">
+                                        {skills.filter(s => s.category === "soft").map(skill => (
+                                            <div key={skill.id} className="skill-item">
+                                                <div className="skill-header">
+                                                    <span className="skill-name">{skill.name}</span>
+                                                    <span className="skill-percentage">{skill.level}%</span>
+                                                </div>
+                                                <div className="skill-bar">
+                                                    <div
+                                                        className="skill-progress soft"
+                                                        style={{ width: `${skill.level}%` }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                );
+
+            case "history":
+                return (
+                    <div className="card employee-detail-section">
+                        <h2 className="section-title">Employment History</h2>
+                        <div className="employment-timeline">
+                            {employmentHistory.map((position) => (
+                                <div key={position.id} className="timeline-item">
+                                    <div className="timeline-marker">
+                                        {position.isCurrent && <div className="timeline-pulse" />}
+                                    </div>
+                                    <div className="timeline-content">
+                                        <h3 className="timeline-title">{position.title}</h3>
+                                        <p className="timeline-department">{position.department}</p>
+                                        <p className="timeline-date">
+                                            {new Date(position.startDate).toLocaleDateString("en-US", {
+                                                year: "numeric",
+                                                month: "short",
+                                            })}{" "}
+                                            -{" "}
+                                            {position.endDate
+                                                ? new Date(position.endDate).toLocaleDateString("en-US", {
+                                                    year: "numeric",
+                                                    month: "short",
+                                                })
+                                                : "Present"}
+                                        </p>
+                                        {position.description && (
+                                            <p className="timeline-description">{position.description}</p>
+                                        )}
+                                        {position.isCurrent && (
+                                            <span className="timeline-badge">Current</span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+
+            case "documents":
+                return (
+                    <>
+                        <MockDataBanner />
+                        <div className="employee-detail-grid-2">
+                            <DocumentList
+                                employeeId={employee.id}
+                                documents={documents}
+                                onDocumentAdded={handleDocumentAdded}
+                                onDocumentDeleted={handleDocumentDeleted}
+                                isLoading={documentsLoading}
+                            />
+                            <NotesList
+                                employeeId={employee.id}
+                                notes={notes}
+                                onNoteAdded={handleNoteAdded}
+                                onNoteUpdated={handleNoteUpdated}
+                                onNoteDeleted={handleNoteDeleted}
+                                isLoading={notesLoading}
+                            />
+                        </div>
+                    </>
+                );
+
+            default:
+                return null;
+        }
+    };
 
     if (isLoading) {
         return (
@@ -308,6 +671,14 @@ const EmployeeDetailPage = () => {
                 </div>
                 <div className="employee-detail-actions">
                     <button
+                        className="btn btn-secondary"
+                        onClick={exportToPDF}
+                        title="Export profile to file"
+                    >
+                        <Download size={18} />
+                        Export
+                    </button>
+                    <button
                         className="btn btn-primary"
                         onClick={() => setShowEditModal(true)}
                     >
@@ -324,142 +695,36 @@ const EmployeeDetailPage = () => {
                 </div>
             </div>
 
-            {/* Contact Information */}
-            <div className="card employee-detail-section">
-                <h2 className="section-title">Contact Information</h2>
-                <div className="employee-detail-grid">
-                    <div className="detail-item">
-                        <Mail className="detail-icon" />
-                        <div className="detail-content">
-                            <p className="detail-label">Email</p>
-                            <p className="detail-value">{employee.email}</p>
-                        </div>
-                        <button
-                            className="copy-btn"
-                            onClick={() => copyToClipboard(employee.email, "email")}
-                            title="Copy email"
-                        >
-                            {copiedField === "email" ? (
-                                <Check size={18} className="copy-icon success" />
-                            ) : (
-                                <Copy size={18} className="copy-icon" />
-                            )}
-                        </button>
-                    </div>
-                    <div className="detail-item">
-                        <Building2 className="detail-icon" />
-                        <div className="detail-content">
-                            <p className="detail-label">Department</p>
-                            <p className="detail-value">{employee.department}</p>
-                        </div>
-                    </div>
-                    <div className="detail-item">
-                        <Briefcase className="detail-icon" />
-                        <div className="detail-content">
-                            <p className="detail-label">Role</p>
-                            <p className="detail-value">{employee.role}</p>
-                        </div>
-                    </div>
-                    <div className="detail-item">
-                        <Calendar className="detail-icon" />
-                        <div className="detail-content">
-                            <p className="detail-label">Join Date</p>
-                            <p className="detail-value">
-                                {employee.join_date
-                                    ? new Date(employee.join_date).toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric",
-                                    })
-                                    : "N/A"}
-                            </p>
-                        </div>
-                    </div>
+            {/* Tabs Navigation */}
+            <div className="tabs-container">
+                <div className="tabs-nav">
+                    <button
+                        className={`tab-btn ${activeTab === "overview" ? "active" : ""}`}
+                        onClick={() => setActiveTab("overview")}
+                    >
+                        <UserCircle size={18} />
+                        Overview
+                    </button>
+                    <button
+                        className={`tab-btn ${activeTab === "history" ? "active" : ""}`}
+                        onClick={() => setActiveTab("history")}
+                    >
+                        <Clock size={18} />
+                        Employment History
+                    </button>
+                    <button
+                        className={`tab-btn ${activeTab === "documents" ? "active" : ""}`}
+                        onClick={() => setActiveTab("documents")}
+                    >
+                        <FileText size={18} />
+                        Documents & Notes
+                    </button>
                 </div>
             </div>
 
-            {/* Statistics */}
-            <div className="card employee-detail-section">
-                <h2 className="section-title">Performance Statistics</h2>
-                <div className="stats-grid">
-                    {stats.map((stat) => (
-                        <div key={stat.id} className={`stat-card stat-${stat.color}`}>
-                            <div className="stat-icon-wrapper">
-                                {stat.icon}
-                            </div>
-                            <div className="stat-content">
-                                <p className="stat-value">{stat.value}</p>
-                                <p className="stat-label">{stat.label}</p>
-                                {stat.trend && (
-                                    <div className={`stat-trend ${stat.trendDirection}`}>
-                                        {stat.trendDirection === "up" ? (
-                                            <TrendingUp size={14} />
-                                        ) : (
-                                            <TrendingDown size={14} />
-                                        )}
-                                        <span>{stat.trend}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Employment History */}
-            <div className="card employee-detail-section">
-                <h2 className="section-title">Employment History</h2>
-                <div className="employment-timeline">
-                    {employmentHistory.map((position) => (
-                        <div key={position.id} className="timeline-item">
-                            <div className="timeline-marker">
-                                {position.isCurrent && <div className="timeline-pulse" />}
-                            </div>
-                            <div className="timeline-content">
-                                <h3 className="timeline-title">{position.title}</h3>
-                                <p className="timeline-department">{position.department}</p>
-                                <p className="timeline-date">
-                                    {new Date(position.startDate).toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                    })}{" "}
-                                    -{" "}
-                                    {position.endDate
-                                        ? new Date(position.endDate).toLocaleDateString("en-US", {
-                                            year: "numeric",
-                                            month: "short",
-                                        })
-                                        : "Present"}
-                                </p>
-                                {position.isCurrent && (
-                                    <span className="timeline-badge">Current</span>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Mock Data Banner */}
-            <MockDataBanner />
-
-            {/* Documents and Notes */}
-            <div className="employee-detail-grid-2">
-                <DocumentList
-                    employeeId={employee.id}
-                    documents={documents}
-                    onDocumentAdded={handleDocumentAdded}
-                    onDocumentDeleted={handleDocumentDeleted}
-                    isLoading={documentsLoading}
-                />
-                <NotesList
-                    employeeId={employee.id}
-                    notes={notes}
-                    onNoteAdded={handleNoteAdded}
-                    onNoteUpdated={handleNoteUpdated}
-                    onNoteDeleted={handleNoteDeleted}
-                    isLoading={notesLoading}
-                />
+            {/* Tab Content */}
+            <div className="tab-content" ref={contentRef}>
+                {renderTabContent()}
             </div>
 
             {/* Edit Employee Modal */}
