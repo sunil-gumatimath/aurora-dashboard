@@ -17,7 +17,7 @@
 - 📊 **Analytics Dashboard** - Charts and real-time statistics
 - 📄 **Documents & Notes** - File management and note-taking system
 - 🎨 **Modern UI** - Dark theme, glassmorphism effects, responsive design
-- ⚡ **Performance Optimized** - 40-85% performance improvements
+- ⚡ **Performance Optimized** - 52% bundle size reduction with code splitting & lazy loading
 
 ## 🛠️ Tech Stack
 
@@ -60,6 +60,7 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 - [Supabase Setup](./SUPABASE_SETUP.md)
 - [API Reference](./API_REFERENCE.md)
 - [Project Review](./PROJECT_REVIEW.md)
+- [Performance Optimization](./PERFORMANCE_OPTIMIZATION.md)
 
 ## 📄 License
 

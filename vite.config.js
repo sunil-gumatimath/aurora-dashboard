@@ -7,4 +7,40 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  build: {
+    // Increase chunk size warning limit slightly (default is 500kB)
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split React and React-DOM into separate chunk
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+
+          // Split Recharts into its own chunk (this is the heavy one)
+          "recharts-vendor": ["recharts"],
+
+          // Split Supabase into separate chunk
+          "supabase-vendor": ["@supabase/supabase-js"],
+
+          // Split icons and utilities
+          "ui-vendor": ["lucide-react", "date-fns", "prop-types"],
+        },
+      },
+    },
+    // Enable CSS code splitting
+    cssCodeSplit: true,
+    // Optimize dependencies
+    sourcemap: false,
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+  },
+  // Pre-bundle heavy dependencies
+  optimizeDeps: {
+    include: ["recharts", "@supabase/supabase-js", "lucide-react"],
+  },
 });
