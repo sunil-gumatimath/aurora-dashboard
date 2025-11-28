@@ -339,7 +339,7 @@ Exported on: ${new Date().toLocaleString()}
             window.URL.revokeObjectURL(url);
 
             setToast({ type: "success", message: "Profile exported successfully!" });
-        } catch (error) {
+        } catch {
             setToast({ type: "error", message: "Failed to export profile" });
         }
     };

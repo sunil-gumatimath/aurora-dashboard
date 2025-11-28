@@ -1,16 +1,26 @@
 import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from "react";
-import { UserPlus, Users, RefreshCw } from "lucide-react";
+import { UserPlus, Users, RefreshCw, Download, Upload, FileText } from "lucide-react";
 import "./employees-styles.css";
 import { employeeService } from "../../services/employeeService";
 import { supabase } from "../../lib/supabase";
 import Toast from "../../components/Toast";
 import EmployeeCard from "../../components/EmployeeCard";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import FilterPanel from "../../components/FilterPanel";
+import SortControls from "../../components/SortControls";
+import BulkActionToolbar from "../../components/BulkActionToolbar";
+import {
+  transformEmployeesForExport,
+  arrayToCSV,
+  downloadCSV,
+  getEmployeeCSVTemplate
+} from "../../utils/csvUtils";
 
 // Lazy load modals for better performance
 const AddEmployeeModal = lazy(() => import("../../components/AddEmployeeModal"));
 const EditEmployeeModal = lazy(() => import("../../components/EditEmployeeModal"));
 const ConfirmModal = lazy(() => import("../../components/ConfirmModal"));
+const CSVImportModal = lazy(() => import("../../components/CSVImportModal"));
 
 const EmployeeList = () => {
   const [employees, setEmployees] = useState([]);
@@ -25,9 +35,23 @@ const EmployeeList = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [showCSVImportModal, setShowCSVImportModal] = useState(false);
 
   // Toast state
   const [toast, setToast] = useState(null);
+
+  // Bulk selection state
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState(new Set());
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+
+  // Filter and sort states
+  const [filters, setFilters] = useState({
+    department: "",
+    role: "",
+    status: "",
+  });
+  const [sortBy, setSortBy] = useState("join_date");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   // Debounce search term to reduce re-renders
   useEffect(() => {
@@ -62,11 +86,10 @@ const EmployeeList = () => {
   }, []);
 
   // Fetch employees on mount
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     fetchEmployees();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchEmployees]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Supabase Realtime subscription for live updates
   useEffect(() => {
@@ -111,19 +134,63 @@ const EmployeeList = () => {
     };
   }, [fetchEmployees]);
 
-  // Search/filter employees with debounced search term
-  const filteredEmployees = useMemo(() => {
-    if (!debouncedSearchTerm) return employees;
+  // Search, filter, and sort employees with debounced search term
+  const filteredAndSortedEmployees = useMemo(() => {
+    let result = [...employees];
 
-    const term = debouncedSearchTerm.toLowerCase();
-    return employees.filter(
-      (emp) =>
-        emp.name.toLowerCase().includes(term) ||
-        emp.role.toLowerCase().includes(term) ||
-        emp.department.toLowerCase().includes(term) ||
-        emp.email.toLowerCase().includes(term),
-    );
-  }, [debouncedSearchTerm, employees]);
+    // Apply search filter
+    if (debouncedSearchTerm) {
+      const term = debouncedSearchTerm.toLowerCase();
+      result = result.filter(
+        (emp) =>
+          emp.name.toLowerCase().includes(term) ||
+          emp.role.toLowerCase().includes(term) ||
+          emp.department.toLowerCase().includes(term) ||
+          emp.email.toLowerCase().includes(term),
+      );
+    }
+
+    // Apply department filter
+    if (filters.department) {
+      result = result.filter((emp) => emp.department === filters.department);
+    }
+
+    // Apply role filter
+    if (filters.role) {
+      result = result.filter((emp) => emp.role === filters.role);
+    }
+
+    // Apply status filter
+    if (filters.status) {
+      result = result.filter((emp) => emp.status === filters.status);
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+
+      // Handle date sorting
+      if (sortBy === "join_date") {
+        aValue = new Date(aValue);
+        bValue = new Date(bValue);
+      }
+
+      // Handle string sorting
+      if (typeof aValue === "string") {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      } else {
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+      }
+    });
+
+    return result;
+  }, [debouncedSearchTerm, employees, filters, sortBy, sortOrder]);
 
   // Add employee - memoized to prevent re-creation
   const handleAddEmployee = useCallback(
@@ -185,9 +252,7 @@ const EmployeeList = () => {
 
     setActionLoading(true);
 
-    const { error } = await employeeService.delete(
-      selectedEmployee.id,
-    );
+    const { error } = await employeeService.delete(selectedEmployee.id);
 
     if (error) {
       setToast({
@@ -220,6 +285,177 @@ const EmployeeList = () => {
     setShowDeleteModal(true);
   }, []);
 
+  // Handle employee selection
+  const handleToggleSelect = useCallback((employeeId) => {
+    setSelectedEmployeeIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(employeeId)) {
+        newSet.delete(employeeId);
+      } else {
+        newSet.add(employeeId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Select all filtered employees
+  const handleSelectAll = useCallback(() => {
+    const allIds = new Set(filteredAndSortedEmployees.map((emp) => emp.id));
+    setSelectedEmployeeIds(allIds);
+  }, [filteredAndSortedEmployees]);
+
+  // Clear selection
+  const handleClearSelection = useCallback(() => {
+    setSelectedEmployeeIds(new Set());
+  }, []);
+
+  // Bulk delete
+  const handleBulkDelete = useCallback(() => {
+    setShowBulkDeleteModal(true);
+  }, []);
+
+  const confirmBulkDelete = useCallback(async () => {
+    setActionLoading(true);
+
+    const selectedEmployees = employees.filter((emp) =>
+      selectedEmployeeIds.has(emp.id)
+    );
+
+    const deletePromises = selectedEmployees.map((emp) =>
+      employeeService.delete(emp.id)
+    );
+
+    try {
+      await Promise.all(deletePromises);
+      setToast({
+        type: "success",
+        message: `Successfully deleted ${selectedEmployeeIds.size} employee(s)`,
+      });
+      setSelectedEmployeeIds(new Set());
+      setShowBulkDeleteModal(false);
+      fetchEmployees();
+    } catch {
+      setToast({
+        type: "error",
+        message: "Failed to delete some employees",
+      });
+    }
+
+    setActionLoading(false);
+  }, [selectedEmployeeIds, employees, fetchEmployees]);
+
+  // Bulk status update
+  const handleBulkStatusChange = useCallback(async (newStatus) => {
+    setActionLoading(true);
+
+    const selectedEmployees = employees.filter((emp) =>
+      selectedEmployeeIds.has(emp.id)
+    );
+
+    const updatePromises = selectedEmployees.map((emp) =>
+      employeeService.update(emp.id, { status: newStatus })
+    );
+
+    try {
+      await Promise.all(updatePromises);
+      setToast({
+        type: "success",
+        message: `Successfully updated ${selectedEmployeeIds.size} employee(s) to ${newStatus}`,
+      });
+      setSelectedEmployeeIds(new Set());
+      fetchEmployees();
+    } catch {
+      setToast({
+        type: "error",
+        message: "Failed to update some employees",
+      });
+    }
+
+    setActionLoading(false);
+  }, [selectedEmployeeIds, employees, fetchEmployees]);
+
+  // Handle filter changes
+  const handleFilterChange = useCallback((newFilters) => {
+    setFilters(newFilters);
+    setSelectedEmployeeIds(new Set()); // Clear selection when filters change
+  }, []);
+
+  // Handle sort changes
+  const handleSortChange = useCallback((field, order) => {
+    setSortBy(field);
+    setSortOrder(order);
+  }, []);
+
+  // Export filtered employees to CSV
+  const handleExportCSV = useCallback(() => {
+    const employeesToExport = transformEmployeesForExport(filteredAndSortedEmployees);
+    const headers = ['name', 'email', 'role', 'department', 'status', 'join_date'];
+    const csvContent = arrayToCSV(employeesToExport, headers);
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `employees_export_${timestamp}.csv`;
+
+    downloadCSV(csvContent, filename);
+
+    setToast({
+      type: 'success',
+      message: `Exported ${employeesToExport.length} employees to CSV`,
+    });
+  }, [filteredAndSortedEmployees]);
+
+  // Download CSV template
+  const handleDownloadTemplate = useCallback(() => {
+    const template = getEmployeeCSVTemplate();
+    downloadCSV(template, 'employee_import_template.csv');
+
+    setToast({
+      type: 'info',
+      message: 'CSV template downloaded',
+    });
+  }, []);
+
+  // Import employees from CSV
+  const handleCSVImport = useCallback(async (csvData) => {
+    setActionLoading(true);
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const row of csvData) {
+      const employeeData = {
+        name: row.name,
+        email: row.email,
+        role: row.role,
+        department: row.department,
+        status: row.status || 'Active',
+        joinDate: row.join_date || new Date().toISOString().split('T')[0],
+      };
+
+      const { error } = await employeeService.create(employeeData);
+
+      if (error) {
+        errorCount++;
+      } else {
+        successCount++;
+      }
+    }
+
+    if (successCount > 0) {
+      setToast({
+        type: 'success',
+        message: `Successfully imported ${successCount} employee(s)${errorCount > 0 ? `. ${errorCount} failed.` : ''}`,
+      });
+      fetchEmployees();
+    } else {
+      setToast({
+        type: 'error',
+        message: 'Failed to import employees',
+      });
+    }
+
+    setActionLoading(false);
+  }, [fetchEmployees]);
+
   if (isLoading) {
     return (
       <div className="employees-container">
@@ -230,6 +466,14 @@ const EmployeeList = () => {
 
   return (
     <div className="employees-container">
+      {/* Bulk Action Toolbar - appears when items selected */}
+      <BulkActionToolbar
+        selectedCount={selectedEmployeeIds.size}
+        onClearSelection={handleClearSelection}
+        onBulkDelete={handleBulkDelete}
+        onBulkStatusChange={handleBulkStatusChange}
+      />
+
       <div className="employees-header">
         <input
           type="text"
@@ -239,6 +483,38 @@ const EmployeeList = () => {
           className="employees-search"
         />
         <div className="flex gap-2">
+          {/* CSV Actions */}
+          <div className="csv-actions">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleExportCSV}
+              title="Export to CSV"
+              disabled={filteredAndSortedEmployees.length === 0}
+            >
+              <Download size={18} />
+              <span className="btn-text">Export</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleDownloadTemplate}
+              title="Download CSV Template"
+            >
+              <FileText size={18} />
+              <span className="btn-text">Template</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setShowCSVImportModal(true)}
+              title="Import from CSV"
+            >
+              <Upload size={18} />
+              <span className="btn-text">Import</span>
+            </button>
+          </div>
+
           <button
             type="button"
             className="btn btn-ghost"
@@ -262,14 +538,51 @@ const EmployeeList = () => {
         </div>
       </div>
 
-      {filteredEmployees.length > 0 ? (
+      {/* Filter and Sort Controls */}
+      <div className="employees-controls">
+        <FilterPanel
+          employees={employees}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+        />
+        <SortControls
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSortChange={handleSortChange}
+        />
+      </div>
+
+      {/* Results Count & Select All */}
+      {employees.length > 0 && (
+        <div className="employees-results">
+          <p>
+            Showing <strong>{filteredAndSortedEmployees.length}</strong> of{" "}
+            <strong>{employees.length}</strong> employees
+          </p>
+          {filteredAndSortedEmployees.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={handleSelectAll}
+            >
+              {selectedEmployeeIds.size === filteredAndSortedEmployees.length
+                ? "Deselect All"
+                : "Select All"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {filteredAndSortedEmployees.length > 0 ? (
         <div className="employees-grid">
-          {filteredEmployees.map((employee) => (
+          {filteredAndSortedEmployees.map((employee) => (
             <EmployeeCard
               key={employee.id}
               employee={employee}
               onEdit={openEditModal}
               onDelete={openDeleteModal}
+              isSelected={selectedEmployeeIds.has(employee.id)}
+              onToggleSelect={handleToggleSelect}
             />
           ))}
         </div>
@@ -278,8 +591,8 @@ const EmployeeList = () => {
           <Users size={64} className="employees-empty-icon" />
           <h3 className="employees-empty-title">No employees found</h3>
           <p className="employees-empty-description">
-            {searchTerm
-              ? `No employees match "${searchTerm}". Try a different search term.`
+            {searchTerm || filters.department || filters.role || filters.status
+              ? `No employees match your search and filter criteria. Try adjusting your filters.`
               : "No employees in the system yet. Add your first employee to get started."}
           </p>
         </div>
@@ -324,6 +637,30 @@ const EmployeeList = () => {
           }}
           isLoading={actionLoading}
           variant="danger"
+        />
+      </Suspense>
+
+      {/* Bulk Delete Confirmation Modal */}
+      <Suspense fallback={null}>
+        <ConfirmModal
+          isOpen={showBulkDeleteModal}
+          title="Delete Multiple Employees"
+          message={`Are you sure you want to delete ${selectedEmployeeIds.size} employee(s)? This action cannot be undone.`}
+          confirmText="Delete All"
+          cancelText="Cancel"
+          onConfirm={confirmBulkDelete}
+          onCancel={() => setShowBulkDeleteModal(false)}
+          isLoading={actionLoading}
+          variant="danger"
+        />
+      </Suspense>
+
+      {/* CSV Import Modal */}
+      <Suspense fallback={null}>
+        <CSVImportModal
+          isOpen={showCSVImportModal}
+          onClose={() => setShowCSVImportModal(false)}
+          onImport={handleCSVImport}
         />
       </Suspense>
 
