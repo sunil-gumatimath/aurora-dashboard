@@ -7,8 +7,9 @@ import { Edit, Trash } from "lucide-react";
  * Optimized Employee Card Component
  * Uses React.memo to prevent unnecessary re-renders
  * Implements lazy loading for avatar images
+ * Supports multi-select with checkbox
  */
-const EmployeeCard = memo(({ employee, onEdit, onDelete }) => {
+const EmployeeCard = memo(({ employee, onEdit, onDelete, isSelected, onToggleSelect }) => {
   const navigate = useNavigate();
 
   const getStatusClass = (status) => {
@@ -22,8 +23,17 @@ const EmployeeCard = memo(({ employee, onEdit, onDelete }) => {
     }
   };
 
-  const handleCardClick = () => {
+  const handleCardClick = (e) => {
+    // If clicking checkbox or in selection mode, don't navigate
+    if (e.target.type === "checkbox" || e.target.closest('.employee-checkbox-wrapper')) {
+      return;
+    }
     navigate(`/employees/${employee.id}`);
+  };
+
+  const handleCheckboxChange = (e) => {
+    e.stopPropagation();
+    onToggleSelect(employee.id);
   };
 
   const handleEdit = (e) => {
@@ -50,6 +60,18 @@ const EmployeeCard = memo(({ employee, onEdit, onDelete }) => {
       }}
     >
       <div className="employee-card-header">
+        {onToggleSelect && (
+          <div className="employee-checkbox-wrapper">
+            <input
+              type="checkbox"
+              className="employee-checkbox"
+              checked={isSelected}
+              onChange={handleCheckboxChange}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Select ${employee.name}`}
+            />
+          </div>
+        )}
         <div className="employee-info">
           <img
             src={employee.avatar}
@@ -117,6 +139,8 @@ EmployeeCard.propTypes = {
   }).isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
+  isSelected: PropTypes.bool,
+  onToggleSelect: PropTypes.func,
 };
 
 export default EmployeeCard;
