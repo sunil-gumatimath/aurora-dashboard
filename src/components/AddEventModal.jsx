@@ -24,16 +24,17 @@ const AddEventModal = ({
             if (eventToEdit) {
                 setFormData({
                     title: eventToEdit.title || "",
-                    date: eventToEdit.date ? new Date(eventToEdit.date).toISOString().split("T")[0] : "",
+                    date: eventToEdit.date ? new Date(eventToEdit.date).toLocaleDateString("en-CA") : "",
                     time: eventToEdit.time || "",
                     type: eventToEdit.type || "event",
                     location: eventToEdit.location || "",
                     description: eventToEdit.description || "",
                 });
             } else {
+                const dateToUse = initialDate || new Date();
                 setFormData({
                     title: "",
-                    date: initialDate ? new Date(initialDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+                    date: dateToUse.toLocaleDateString("en-CA"),
                     time: "",
                     type: "event",
                     location: "",
