@@ -11,6 +11,9 @@ import {
   ChevronLeft,
   ClipboardList,
   LifeBuoy,
+  Home,
+  Menu,
+  X,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -20,7 +23,7 @@ const Sidebar = ({ activeTab, isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
   const menuItems = [
     {
-      icon: LayoutDashboard,
+      icon: Home,
       label: "Dashboard",
       id: "dashboard",
       path: "/dashboard",
