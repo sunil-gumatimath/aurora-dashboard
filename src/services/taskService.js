@@ -1,49 +1,110 @@
-import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabase.js";
 
 const TABLE_NAME = "tasks";
 
+/**
+ * Task Service - Comprehensive task management operations
+ */
 export const taskService = {
-    async getAll() {
+    /**
+     * Get all tasks with assignee info
+     */
+    async getAll(filters = {}) {
+        try {
+            let query = supabase
+                .from(TABLE_NAME)
+                .select(`
+          *,
+          assignee:employees(id, name, email, avatar, department)
+        `)
+                .order("created_at", { ascending: false });
+
+            // Apply filters
+            if (filters.status && filters.status !== "all") {
+                query = query.eq("status", filters.status);
+            }
+            if (filters.priority && filters.priority !== "all") {
+                query = query.eq("priority", filters.priority);
+            }
+            if (filters.assignee_id) {
+                query = query.eq("assignee_id", filters.assignee_id);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+            return { data: data || [], error: null };
+        } catch (error) {
+            console.error("Error fetching tasks:", error);
+            return { data: [], error };
+        }
+    },
+
+    /**
+     * Get tasks for a specific employee
+     */
+    async getByEmployee(employeeId) {
         try {
             const { data, error } = await supabase
                 .from(TABLE_NAME)
                 .select(`
           *,
-          assignee:employees(name, avatar)
+          assignee:employees(id, name, email, avatar, department)
         `)
+                .eq("assignee_id", employeeId)
                 .order("created_at", { ascending: false });
 
             if (error) throw error;
-
-            return { data, error: null };
+            return { data: data || [], error: null };
         } catch (error) {
-            console.error("Error in taskService:", error);
+            console.error("Error fetching employee tasks:", error);
             return { data: [], error };
         }
     },
 
-    async updateStatus(taskId, newStatus) {
+    /**
+     * Get a single task by ID
+     */
+    async getById(taskId) {
         try {
             const { data, error } = await supabase
                 .from(TABLE_NAME)
-                .update({ status: newStatus })
+                .select(`
+          *,
+          assignee:employees(id, name, email, avatar, department)
+        `)
                 .eq("id", taskId)
-                .select();
+                .single();
 
             if (error) throw error;
             return { data, error: null };
         } catch (error) {
-            console.error("Error updating task status:", error);
+            console.error("Error fetching task:", error);
             return { data: null, error };
         }
     },
 
-    async create(task) {
+    /**
+     * Create a new task
+     */
+    async create(taskData) {
         try {
             const { data, error } = await supabase
                 .from(TABLE_NAME)
-                .insert([task])
-                .select();
+                .insert([{
+                    title: taskData.title,
+                    description: taskData.description || null,
+                    status: taskData.status || "To Do",
+                    priority: taskData.priority || "Medium",
+                    assignee_id: taskData.assignee_id || null,
+                    due_date: taskData.due_date || null,
+                    tags: taskData.tags || [],
+                }])
+                .select(`
+          *,
+          assignee:employees(id, name, email, avatar, department)
+        `)
+                .single();
 
             if (error) throw error;
             return { data, error: null };
@@ -53,13 +114,20 @@ export const taskService = {
         }
     },
 
+    /**
+     * Update a task
+     */
     async update(taskId, updates) {
         try {
             const { data, error } = await supabase
                 .from(TABLE_NAME)
                 .update(updates)
                 .eq("id", taskId)
-                .select();
+                .select(`
+          *,
+          assignee:employees(id, name, email, avatar, department)
+        `)
+                .single();
 
             if (error) throw error;
             return { data, error: null };
@@ -69,6 +137,16 @@ export const taskService = {
         }
     },
 
+    /**
+     * Update task status
+     */
+    async updateStatus(taskId, newStatus) {
+        return this.update(taskId, { status: newStatus });
+    },
+
+    /**
+     * Delete a task
+     */
     async delete(taskId) {
         try {
             const { error } = await supabase
@@ -82,5 +160,50 @@ export const taskService = {
             console.error("Error deleting task:", error);
             return { success: false, error };
         }
+    },
+
+    /**
+     * Get task statistics
+     */
+    async getStats() {
+        try {
+            const { data, error } = await supabase
+                .from(TABLE_NAME)
+                .select("status, priority");
+
+            if (error) throw error;
+
+            const stats = {
+                total: data?.length || 0,
+                byStatus: {
+                    "To Do": 0,
+                    "In Progress": 0,
+                    "Review": 0,
+                    "Done": 0
+                },
+                byPriority: {
+                    "Low": 0,
+                    "Medium": 0,
+                    "High": 0,
+                    "Urgent": 0
+                }
+            };
+
+            data?.forEach(task => {
+                if (task.status && stats.byStatus[task.status] !== undefined) {
+                    stats.byStatus[task.status]++;
+                }
+                if (task.priority && stats.byPriority[task.priority] !== undefined) {
+                    stats.byPriority[task.priority]++;
+                }
+            });
+
+            return { data: stats, error: null };
+        } catch (error) {
+            console.error("Error fetching task stats:", error);
+            return { data: null, error };
+        }
     }
 };
+
+export default taskService;
