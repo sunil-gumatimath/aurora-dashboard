@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { User, Bell, Shield, Palette, Save, AlertCircle, Settings as SettingsIcon } from "lucide-react";
-import Toast from "../../components/Toast";
+import Toast from "../../components/common/Toast";
 import "./settings-styles.css";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";

@@ -1,12 +1,12 @@
 import React, { Suspense } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import Sidebar from "./components/Sidebar";
+import Sidebar from "./components/layout/Sidebar";
 import Stats from "./components/Stats";
 import EmployeeList from "./features/employees/EmployeeList";
 import SettingsView from "./features/settings/SettingsView";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Header from "./components/Header";
-import LoadingSpinner from "./components/LoadingSpinner";
+import ProtectedRoute from "./components/common/ProtectedRoute";
+import Header from "./components/layout/Header";
+import LoadingSpinner from "./components/common/LoadingSpinner";
 import EmployeeDetailPage from "./pages/EmployeeDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import { useAuth } from "./contexts/AuthContext";
@@ -25,6 +25,12 @@ const SupportView = React.lazy(
 );
 const EmployeeDashboard = React.lazy(
   () => import("./features/dashboard/EmployeeDashboard"),
+);
+const LeaveManagement = React.lazy(
+  () => import("./features/leave/LeaveManagement"),
+);
+const TimeTracking = React.lazy(
+  () => import("./features/timetracking/TimeTracking"),
 );
 
 const HomeRedirect = () => {
@@ -45,6 +51,8 @@ function App() {
     if (path.startsWith("/dashboard")) return "dashboard";
     if (path.startsWith("/employees")) return "employees";
     if (path.startsWith("/tasks")) return "tasks";
+    if (path.startsWith("/timetracking")) return "timetracking";
+    if (path.startsWith("/leave")) return "leave";
     if (path.startsWith("/support")) return "support";
     if (path.startsWith("/analytics")) return "analytics";
     if (path.startsWith("/calendar")) return "calendar";
@@ -165,6 +173,32 @@ function App() {
                   }
                 >
                   <SupportView />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="/leave"
+              element={
+                <Suspense
+                  fallback={
+                    <LoadingSpinner size="lg" message="Loading leave management..." />
+                  }
+                >
+                  <LeaveManagement />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="/timetracking"
+              element={
+                <Suspense
+                  fallback={
+                    <LoadingSpinner size="lg" message="Loading time tracking..." />
+                  }
+                >
+                  <TimeTracking />
                 </Suspense>
               }
             />

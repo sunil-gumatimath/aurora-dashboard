@@ -4,7 +4,7 @@ import { Plus, Edit, Trash, Calendar, User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 const AddNoteModal = lazy(() => import("./AddNoteModal"));
 const EditNoteModal = lazy(() => import("./EditNoteModal"));
-const ConfirmModal = lazy(() => import("./ConfirmModal"));
+const ConfirmModal = lazy(() => import("./ui/ConfirmModal"));
 
 const NotesList = ({
   employeeId,

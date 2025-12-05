@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter, MessageSquare, Clock, CheckCircle, AlertCircle, LifeBuoy, X, Trash2 } from "lucide-react";
 import { taskService } from "../../services/taskService";
-import CreateTicketModal from "../../components/CreateTicketModal";
-import ConfirmModal from "../../components/ConfirmModal";
-import LoadingSpinner from "../../components/LoadingSpinner";
-import Toast from "../../components/Toast";
+import CreateTicketModal from "./CreateTicketModal";
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import Toast from "../../components/common/Toast";
 import { useAuth } from "../../contexts/AuthContext";
 
 const SupportView = () => {

@@ -37,15 +37,15 @@ import {
 import { employeeService } from "../services/employeeService";
 import noteService from "../services/noteService";
 import documentService from "../services/documentService";
-import LoadingSpinner from "../components/LoadingSpinner";
-import Toast from "../components/Toast";
+import LoadingSpinner from "../components/common/LoadingSpinner";
+import Toast from "../components/common/Toast";
 import DocumentList from "../components/DocumentList";
 import NotesList from "../components/NotesList";
 import "./employee-detail-styles.css";
 
 // Lazy load modals - they're only needed on user interaction
 const EditEmployeeModal = lazy(() => import("../components/EditEmployeeModal"));
-const ConfirmModal = lazy(() => import("../components/ConfirmModal"));
+const ConfirmModal = lazy(() => import("../components/ui/ConfirmModal"));
 
 const EmployeeDetailPage = () => {
   const { id } = useParams();

@@ -3,12 +3,12 @@ import { DragDropContext } from "@hello-pangea/dnd";
 import { Plus, Filter, ClipboardList, X } from "lucide-react";
 import TaskColumn from "./TaskColumn";
 import { taskService } from "../../services/taskService";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import "./tasks.css";
 
-import CreateTaskModal from "../../components/CreateTaskModal";
-import ConfirmModal from "../../components/ConfirmModal";
-import Toast from "../../components/Toast";
+import CreateTaskModal from "./CreateTaskModal";
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import Toast from "../../components/common/Toast";
 
 const TaskBoard = () => {
     const [tasks, setTasks] = useState([]);

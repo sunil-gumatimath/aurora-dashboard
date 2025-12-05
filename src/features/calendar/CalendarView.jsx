@@ -19,9 +19,9 @@ import {
 import { ChevronLeft, ChevronRight, MapPin, Plus, Award, Clock, Trash2, Edit2, Calendar } from "lucide-react";
 import { employeeService } from "../../services/employeeService";
 import { calendarService } from "../../services/calendarService";
-import LoadingSpinner from "../../components/LoadingSpinner";
-import AddEventModal from "../../components/AddEventModal";
-import ConfirmModal from "../../components/ConfirmModal";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import AddEventModal from "./AddEventModal";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 import "./calendar-styles.css";
 
 const CalendarView = () => {

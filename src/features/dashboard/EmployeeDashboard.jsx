@@ -9,7 +9,7 @@ import {
     ListTodo,
     TrendingUp
 } from "lucide-react";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { Link } from "react-router-dom";
 
 const MOTIVATIONAL_QUOTES = [

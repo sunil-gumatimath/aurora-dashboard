@@ -10,9 +10,9 @@ import { UserPlus, Users, RefreshCw, Download, Search, X } from "lucide-react";
 import "./employees-styles.css";
 import { employeeService } from "../../services/employeeService";
 import { supabase } from "../../lib/supabase";
-import Toast from "../../components/Toast";
+import Toast from "../../components/common/Toast";
 import EmployeeCard from "../../components/EmployeeCard";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import FilterPanel from "../../components/FilterPanel";
 import SortControls from "../../components/SortControls";
 import BulkActionToolbar from "../../components/BulkActionToolbar";
@@ -24,7 +24,7 @@ const AddEmployeeModal = lazy(
 const EditEmployeeModal = lazy(
   () => import("../../components/EditEmployeeModal"),
 );
-const ConfirmModal = lazy(() => import("../../components/ConfirmModal"));
+const ConfirmModal = lazy(() => import("../../components/ui/ConfirmModal"));
 
 const EmployeeList = () => {
   const [employees, setEmployees] = useState([]);

@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { employeeService } from "../../services/employeeService";
 import { taskService } from "../../services/taskService";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import "./analytics-styles.css";
 
 const StatCard = ({ title, value, change, icon: Icon, color }) => (

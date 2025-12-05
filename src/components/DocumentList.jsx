@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { Upload, Download, Trash, Calendar } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 const DocumentUploadModal = lazy(() => import("./DocumentUploadModal"));
-const ConfirmModal = lazy(() => import("./ConfirmModal"));
+const ConfirmModal = lazy(() => import("./ui/ConfirmModal"));
 import documentService from "../services/documentService";
 
 const DocumentList = ({
