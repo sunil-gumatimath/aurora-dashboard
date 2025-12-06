@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   format,
   addMonths,
@@ -15,17 +15,24 @@ import {
   addDays,
   subDays,
   parseISO,
+  addYears,
+  differenceInDays,
+  differenceInWeeks,
+  differenceInMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, MapPin, Plus, Award, Clock, Trash2, Edit2, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Plus, Award, Clock, Trash2, Edit2, Calendar, Repeat } from "lucide-react";
 import { employeeService } from "../../services/employeeService";
 import { calendarService } from "../../services/calendarService";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { SkeletonCalendar, SkeletonEventCard, Skeleton } from "../../components/common/Skeleton";
 import AddEventModal from "./AddEventModal";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import MiniCalendar from "./MiniCalendar";
+import EventPopover from "./EventPopover";
 import "./calendar-styles.css";
 
 const CalendarView = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [miniCalMonth, setMiniCalMonth] = useState(new Date());
   const [view, setView] = useState("month"); // "month", "week", "day"
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -34,6 +41,57 @@ const CalendarView = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
+
+  // Popover state
+  const [popoverEvent, setPopoverEvent] = useState(null);
+  const [popoverAnchor, setPopoverAnchor] = useState(null);
+  const [isPopoverVisible, setIsPopoverVisible] = useState(false);
+
+  // Generate recurring event instances for a given date range
+  const generateRecurringInstances = (event, startRange, endRange) => {
+    const instances = [];
+    const eventDate = new Date(event.date);
+    const recurrence = event.recurrence;
+
+    if (!recurrence || recurrence === "none") {
+      return [event];
+    }
+
+    let currentDate = new Date(eventDate);
+    const maxIterations = 365; // Limit to prevent infinite loops
+    let iterations = 0;
+
+    while (currentDate <= endRange && iterations < maxIterations) {
+      if (currentDate >= startRange) {
+        instances.push({
+          ...event,
+          date: new Date(currentDate),
+          originalEventId: event.id,
+          isRecurringInstance: iterations > 0,
+        });
+      }
+
+      switch (recurrence) {
+        case "daily":
+          currentDate = addDays(currentDate, 1);
+          break;
+        case "weekly":
+          currentDate = addDays(currentDate, 7);
+          break;
+        case "monthly":
+          currentDate = addMonths(currentDate, 1);
+          break;
+        case "yearly":
+          currentDate = addYears(currentDate, 1);
+          break;
+        default:
+          return instances;
+      }
+      iterations++;
+    }
+
+    return instances;
+  };
 
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
@@ -45,6 +103,10 @@ const CalendarView = () => {
       const { data: calendarEvents } = await calendarService.getAll();
 
       let allEvents = [];
+
+      // Define date range for recurring events (current month ± 2 months)
+      const rangeStart = subMonths(startOfMonth(currentMonth), 1);
+      const rangeEnd = addMonths(endOfMonth(currentMonth), 1);
 
       // Process Anniversaries
       if (employees) {
@@ -72,15 +134,21 @@ const CalendarView = () => {
         allEvents = [...allEvents, ...anniversaryEvents];
       }
 
-      // Process Calendar Events
+      // Process Calendar Events with recurring instances
       if (calendarEvents) {
-        const formattedEvents = calendarEvents.map(evt => ({
-          ...evt,
-          date: parseISO(evt.date), // Ensure date object correctly parsed from ISO string
-          colorClass: getEventColorClass(evt.type),
-          isAnniversary: false
-        }));
-        allEvents = [...allEvents, ...formattedEvents];
+        calendarEvents.forEach(evt => {
+          const formattedEvent = {
+            ...evt,
+            date: parseISO(evt.date),
+            endTime: evt.end_time,
+            isAllDay: evt.is_all_day,
+            colorClass: getEventColorClass(evt.type),
+            isAnniversary: false
+          };
+
+          const instances = generateRecurringInstances(formattedEvent, rangeStart, rangeEnd);
+          allEvents = [...allEvents, ...instances];
+        });
       }
 
       setEvents(allEvents);
@@ -103,10 +171,12 @@ const CalendarView = () => {
 
   const getEventColorClass = (type) => {
     switch (type) {
-      case "meeting": return "event-meeting"; // You might need to define these in CSS if not existing
+      case "meeting": return "event-meeting";
       case "holiday": return "event-holiday";
       case "deadline": return "event-deadline";
-      default: return "event-personal"; // Default color
+      case "event":
+      case "personal":
+      default: return "event-personal";
     }
   };
 
@@ -124,11 +194,12 @@ const CalendarView = () => {
 
   const onDateClick = (day) => {
     setSelectedDate(day);
-    if (view === "month") {
-      // Optional: switch to day view on click?
-      // setView("day");
-      // setCurrentMonth(day);
-    }
+    setMiniCalMonth(day);
+  };
+
+  const handleMiniCalDateSelect = (day) => {
+    setSelectedDate(day);
+    setCurrentMonth(day);
   };
 
   const handleAddEvent = (date = null) => {
@@ -138,12 +209,20 @@ const CalendarView = () => {
   };
 
   const handleEditEvent = (event) => {
-    setEditingEvent(event);
+    // For recurring instances, edit the original event
+    const eventToEdit = event.isRecurringInstance
+      ? { ...event, id: event.originalEventId }
+      : event;
+    setEditingEvent(eventToEdit);
     setIsModalOpen(true);
   };
 
   const handleDeleteClick = (event) => {
-    setEventToDelete(event);
+    // For recurring instances, delete the original event
+    const eventToDeleteData = event.isRecurringInstance
+      ? { ...event, id: event.originalEventId }
+      : event;
+    setEventToDelete(eventToDeleteData);
     setIsDeleteModalOpen(true);
   };
 
@@ -177,6 +256,19 @@ const CalendarView = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleEventClick = (event, e) => {
+    e.stopPropagation();
+    setPopoverEvent(event);
+    setPopoverAnchor(e.currentTarget);
+    setIsPopoverVisible(true);
+  };
+
+  const closePopover = () => {
+    setIsPopoverVisible(false);
+    setPopoverEvent(null);
+    setPopoverAnchor(null);
   };
 
   const renderHeader = () => {
@@ -278,7 +370,7 @@ const CalendarView = () => {
     while (day <= endDate) {
       const formattedDate = format(day, dateFormat);
       const cloneDay = day;
-      const dayEvents = events.filter((e) => isSameDay(e.date, day));
+      const dayEvents = events.filter((e) => isSameDay(new Date(e.date), day));
       const isSelected = isSameDay(day, selectedDate);
       const isCurrentMonth = isSameMonth(day, monthStart);
       const today = isToday(day);
@@ -311,7 +403,7 @@ const CalendarView = () => {
             <span className="calendar-day-number">{formattedDate}</span>
             {dayEvents.length > 0 && (
               <span className="calendar-day-event-count">
-                {dayEvents.length} evt
+                {dayEvents.length} {dayEvents.length === 1 ? "event" : "events"}
               </span>
             )}
           </div>
@@ -319,15 +411,21 @@ const CalendarView = () => {
           <div className="calendar-day-events">
             {dayEvents.slice(0, 3).map((event) => (
               <div
-                key={event.id}
+                key={event.id + (event.isRecurringInstance ? `-${event.date.toISOString()}` : "")}
                 className={`calendar-event ${event.colorClass}`}
                 title={event.title}
+                onClick={(e) => handleEventClick(event, e)}
               >
-                {event.time && event.time !== "All Day" ? event.time.substring(0, 5) : ""} {event.title}
+                <span className="calendar-event-content">
+                  {event.recurrence && event.recurrence !== "none" && (
+                    <Repeat size={10} className="calendar-event-recurring-icon" />
+                  )}
+                  {event.time && event.time !== "All Day" ? event.time.substring(0, 5) : ""} {event.title}
+                </span>
               </div>
             ))}
             {dayEvents.length > 3 && (
-              <div className="text-xs text-muted pl-1">
+              <div className="calendar-more-events">
                 + {dayEvents.length - 3} more
               </div>
             )}
@@ -336,7 +434,7 @@ const CalendarView = () => {
           <button
             type="button"
             className="calendar-day-add-button"
-            aria-label="Add event"
+            aria-label={`Add event on ${format(cloneDay, 'MMMM d')}`}
             onClick={(e) => {
               e.stopPropagation();
               handleAddEvent(cloneDay);
@@ -358,7 +456,7 @@ const CalendarView = () => {
 
     for (let i = 0; i < 7; i++) {
       const day = addDays(startDate, i);
-      const dayEvents = events.filter((e) => isSameDay(e.date, day));
+      const dayEvents = events.filter((e) => isSameDay(new Date(e.date), day));
       const isSelected = isSameDay(day, selectedDate);
       const isTodayDate = isToday(day);
 
@@ -375,21 +473,26 @@ const CalendarView = () => {
           <div className="calendar-week-events">
             {dayEvents.map(event => (
               <div
-                key={event.id}
+                key={event.id + (event.isRecurringInstance ? `-${event.date.toISOString()}` : "")}
                 className={`calendar-event ${event.colorClass}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEditEvent(event);
-                }}
+                onClick={(e) => handleEventClick(event, e)}
               >
-                <div className="flex justify-between items-center">
-                  <span className="font-medium truncate">{event.title}</span>
-                  {event.time && <span className="text-[10px] opacity-80">{event.time}</span>}
+                <div className="calendar-event-week-content">
+                  <span className="calendar-event-title">{event.title}</span>
+                  {event.time && (
+                    <span className="calendar-event-time-badge">
+                      {event.time === "All Day" ? "All Day" : event.time}
+                    </span>
+                  )}
+                  {event.recurrence && event.recurrence !== "none" && (
+                    <Repeat size={10} className="calendar-event-recurring-icon" />
+                  )}
                 </div>
               </div>
             ))}
             <button
               className="add-event-week-btn"
+              aria-label={`Add event on ${format(day, 'MMMM d')}`}
               onClick={(e) => {
                 e.stopPropagation();
                 handleAddEvent(day);
@@ -407,9 +510,9 @@ const CalendarView = () => {
 
   const renderDayView = () => {
     const day = currentMonth;
-    const dayEvents = events.filter((e) => isSameDay(e.date, day));
+    const dayEvents = events.filter((e) => isSameDay(new Date(e.date), day));
 
-    // Generate time slots from 8 AM to 8 PM (or 24h)
+    // Generate time slots from 8 AM to 8 PM
     const timeSlots = [];
     for (let i = 8; i <= 20; i++) {
       timeSlots.push(i);
@@ -419,10 +522,10 @@ const CalendarView = () => {
       <div className="calendar-day-view">
         <div className="day-view-header">
           <div className="day-view-date">
-            <span className="text-3xl font-bold text-main">{format(day, "d")}</span>
-            <div className="flex flex-col">
-              <span className="text-lg font-medium text-muted">{format(day, "EEEE")}</span>
-              <span className="text-sm text-muted">{format(day, "MMMM yyyy")}</span>
+            <span className="day-view-date-num">{format(day, "d")}</span>
+            <div className="day-view-date-info">
+              <span className="day-view-day-name">{format(day, "EEEE")}</span>
+              <span className="day-view-month-year">{format(day, "MMMM yyyy")}</span>
             </div>
           </div>
           <button
@@ -435,10 +538,8 @@ const CalendarView = () => {
 
         <div className="day-view-timeline">
           {timeSlots.map(hour => {
-            // Find events that start in this hour
-            // This is a simple approximation. Real implementation would parse time strings properly.
             const hourEvents = dayEvents.filter(e => {
-              if (!e.time) return false;
+              if (!e.time || e.time === "All Day") return false;
               const [h] = e.time.split(':');
               return parseInt(h) === hour;
             });
@@ -449,14 +550,17 @@ const CalendarView = () => {
                 <div className="day-view-content">
                   {hourEvents.map(event => (
                     <div
-                      key={event.id}
+                      key={event.id + (event.isRecurringInstance ? `-${event.date.toISOString()}` : "")}
                       className={`day-event-card ${event.colorClass}`}
-                      onClick={() => handleEditEvent(event)}
+                      onClick={(e) => handleEventClick(event, e)}
                     >
-                      <div className="font-semibold">{event.title}</div>
-                      <div className="text-xs opacity-80 flex gap-2">
-                        <span>{event.time}</span>
+                      <div className="day-event-title">{event.title}</div>
+                      <div className="day-event-meta">
+                        <span>{event.time}{event.endTime ? ` - ${event.endTime}` : ""}</span>
                         {event.location && <span>📍 {event.location}</span>}
+                        {event.recurrence && event.recurrence !== "none" && (
+                          <Repeat size={12} />
+                        )}
                       </div>
                     </div>
                   ))}
@@ -465,18 +569,23 @@ const CalendarView = () => {
             );
           })}
 
-          {/* All day events or events without time */}
+          {/* All day events */}
           <div className="day-view-hour">
             <div className="day-view-time">All Day</div>
             <div className="day-view-content">
               {dayEvents.filter(e => !e.time || e.time === "All Day").map(event => (
                 <div
-                  key={event.id}
+                  key={event.id + (event.isRecurringInstance ? `-${event.date.toISOString()}` : "")}
                   className={`day-event-card ${event.colorClass}`}
-                  onClick={() => handleEditEvent(event)}
+                  onClick={(e) => handleEventClick(event, e)}
                 >
-                  <div className="font-semibold">{event.title}</div>
-                  <div className="text-xs opacity-80">All Day</div>
+                  <div className="day-event-title">{event.title}</div>
+                  <div className="day-event-meta">
+                    <span>All Day</span>
+                    {event.recurrence && event.recurrence !== "none" && (
+                      <Repeat size={12} />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -488,49 +597,64 @@ const CalendarView = () => {
 
   const renderSidebar = () => {
     const selectedDayEvents = events.filter((e) =>
-      isSameDay(e.date, selectedDate),
+      isSameDay(new Date(e.date), selectedDate),
     );
 
     return (
       <div className="calendar-sidebar">
+        {/* Mini Calendar Widget */}
+        <MiniCalendar
+          selectedDate={selectedDate}
+          onDateSelect={handleMiniCalDateSelect}
+          currentMonth={miniCalMonth}
+          onMonthChange={setMiniCalMonth}
+          events={events}
+        />
+
         <div className="calendar-sidebar-header">
           <h3>{format(selectedDate, "EEEE, MMMM do")}</h3>
-          <p>{selectedDayEvents.length} events scheduled</p>
+          <p>{selectedDayEvents.length} {selectedDayEvents.length === 1 ? "event" : "events"} scheduled</p>
         </div>
 
         <div className="calendar-sidebar-events">
           {selectedDayEvents.length > 0 ? (
             selectedDayEvents.map((event) => (
-              <div key={event.id} className="calendar-event-card group relative">
+              <div key={event.id + (event.isRecurringInstance ? `-${event.date.toISOString()}` : "")} className="calendar-event-card group relative">
                 <div className="calendar-event-time">
                   <Clock size={14} className="inline mr-1" />
                   {event.time}
+                  {event.endTime && ` - ${event.endTime}`}
                 </div>
                 <div className={`calendar-event-details ${event.colorClass}`}>
                   <div>
-                    <h4 className="font-semibold">{event.title}</h4>
+                    <h4 className="calendar-event-card-title">
+                      {event.title}
+                      {event.recurrence && event.recurrence !== "none" && (
+                        <Repeat size={12} className="inline ml-2 opacity-60" />
+                      )}
+                    </h4>
                     <div className="calendar-event-location mt-1">
                       {event.isAnniversary ? <Award size={12} /> : <MapPin size={12} />}
                       <span>{event.location || "No location"}</span>
                     </div>
                     {event.description && (
-                      <p className="text-xs mt-2 opacity-80 line-clamp-2">{event.description}</p>
+                      <p className="calendar-event-description">{event.description}</p>
                     )}
                   </div>
                 </div>
 
                 {!event.isAnniversary && (
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="calendar-event-actions">
                     <button
                       onClick={() => handleEditEvent(event)}
-                      className="p-1.5 bg-white/90 rounded-md hover:bg-white text-blue-600 shadow-sm"
+                      className="calendar-event-action-btn edit"
                       title="Edit"
                     >
                       <Edit2 size={14} />
                     </button>
                     <button
                       onClick={() => handleDeleteClick(event)}
-                      className="p-1.5 bg-white/90 rounded-md hover:bg-white text-red-600 shadow-sm"
+                      className="calendar-event-action-btn delete"
                       title="Delete"
                     >
                       <Trash2 size={14} />
@@ -552,8 +676,47 @@ const CalendarView = () => {
 
   if (isLoading && !events.length) {
     return (
-      <div className="calendar-container">
-        <LoadingSpinner size="lg" message="Loading calendar events..." />
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="card">
+          <div className="calendar-header">
+            <div className="calendar-header-title">
+              <Skeleton width="200px" height="32px" />
+              <Skeleton width="220px" height="14px" />
+            </div>
+            <div className="calendar-header-actions">
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Skeleton width="36px" height="36px" borderRadius="8px" />
+                <Skeleton width="60px" height="36px" borderRadius="8px" />
+                <Skeleton width="36px" height="36px" borderRadius="8px" />
+              </div>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <Skeleton width="60px" height="32px" borderRadius="6px" />
+                <Skeleton width="60px" height="32px" borderRadius="6px" />
+                <Skeleton width="60px" height="32px" borderRadius="6px" />
+              </div>
+              <Skeleton width="100px" height="40px" borderRadius="8px" />
+            </div>
+          </div>
+        </div>
+
+        <div className="calendar-layout">
+          {/* Calendar Grid Skeleton */}
+          <div className="card p-6">
+            <SkeletonCalendar />
+          </div>
+
+          {/* Sidebar Skeleton */}
+          <div className="card p-6">
+            <Skeleton width="180px" height="20px" />
+            <Skeleton width="100px" height="14px" className="mt-2" />
+            <div className="skeleton-stagger" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <SkeletonEventCard key={i} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -593,13 +756,23 @@ const CalendarView = () => {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
         title="Delete Event"
-        message={`Are you sure you want to delete "${eventToDelete?.title}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete "${eventToDelete?.title}"?${eventToDelete?.recurrence && eventToDelete?.recurrence !== "none" ? " This will delete all recurring instances." : ""} This action cannot be undone.`}
         confirmText="Delete"
         type="danger"
         isLoading={isLoading}
+      />
+
+      <EventPopover
+        event={popoverEvent}
+        anchorEl={popoverAnchor}
+        isVisible={isPopoverVisible}
+        onClose={closePopover}
+        onEdit={handleEditEvent}
+        onDelete={handleDeleteClick}
       />
     </div>
   );
 };
 
 export default CalendarView;
+

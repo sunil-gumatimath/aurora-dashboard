@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { timeTrackingService } from "../../services/timeTrackingService.js";
 import { useAuth } from "../../contexts/AuthContext";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { SkeletonTimeEntry, SkeletonStatCard, Skeleton } from "../../components/common/Skeleton";
 import Toast from "../../components/common/Toast";
 import "./timetracking-styles.css";
 
@@ -139,7 +139,65 @@ const TimeTracking = () => {
     const isClockedIn = todayEntry?.clock_in && !todayEntry?.clock_out;
 
     if (loading) {
-        return <LoadingSpinner size="lg" message="Loading time tracking..." />;
+        return (
+            <div className="timetracking">
+                {/* Header Skeleton */}
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <Skeleton width="180px" height="32px" />
+                        <Skeleton width="250px" height="14px" className="mt-2" />
+                    </div>
+                </div>
+
+                {/* Clock Card Skeleton */}
+                <div className="card clock-card" style={{ padding: '32px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        <Skeleton width="200px" height="48px" />
+                        <Skeleton width="280px" height="16px" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
+                        <Skeleton width="100px" height="28px" borderRadius="14px" />
+                        <Skeleton width="120px" height="16px" />
+                    </div>
+                    <div style={{ marginTop: '24px' }}>
+                        <Skeleton width="140px" height="44px" borderRadius="22px" />
+                    </div>
+                </div>
+
+                {/* Weekly Summary Skeleton */}
+                <div className="card weekly-section" style={{ marginTop: '24px', padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Skeleton width="20px" height="20px" borderRadius="4px" />
+                            <Skeleton width="150px" height="20px" />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Skeleton width="32px" height="32px" borderRadius="6px" />
+                            <Skeleton width="120px" height="16px" />
+                            <Skeleton width="32px" height="32px" borderRadius="6px" />
+                        </div>
+                    </div>
+
+                    {/* Weekly Stats Skeleton */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <SkeletonStatCard key={i} hasIcon={true} />
+                        ))}
+                    </div>
+
+                    {/* Daily Breakdown Skeleton */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '12px' }}>
+                        {Array.from({ length: 7 }).map((_, i) => (
+                            <div key={i} style={{ padding: '16px', background: 'var(--bg-muted)', borderRadius: '8px' }}>
+                                <Skeleton width="30px" height="14px" />
+                                <Skeleton width="20px" height="20px" className="mt-2" />
+                                <Skeleton width="40px" height="24px" className="mt-3" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     if (!employeeId) {
@@ -152,7 +210,7 @@ const TimeTracking = () => {
         );
     }
 
-    
+
     return (
         <div className="timetracking">
             {/* Header */}

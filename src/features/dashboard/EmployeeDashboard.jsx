@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { taskService } from "../../services/taskService";
 import { calendarService } from "../../services/calendarService";
@@ -7,10 +7,21 @@ import {
     Clock,
     Calendar as CalendarIcon,
     ListTodo,
-    TrendingUp
+    RefreshCw,
+    ClipboardList,
+    CalendarPlus,
+    FileText,
+    Timer,
+    Sparkles,
+    AlertCircle,
+    ArrowRight,
+    Coffee,
+    Sun,
+    Moon,
+    Sunrise,
 } from "lucide-react";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { Link } from "react-router-dom";
+import "./employee-dashboard-styles.css";
 
 const MOTIVATIONAL_QUOTES = [
     "The only way to do great work is to love what you do. – Steve Jobs",
@@ -31,12 +42,44 @@ const MOTIVATIONAL_QUOTES = [
     "Efficiency is doing things right; effectiveness is doing the right things. – Peter Drucker"
 ];
 
+// Skeleton Components
+const SkeletonStatCard = () => (
+    <div className="emp-dash-stat-card skeleton-card">
+        <div className="skeleton skeleton-icon-sm"></div>
+        <div style={{ flex: 1 }}>
+            <div className="skeleton skeleton-text-sm"></div>
+            <div className="skeleton skeleton-text-lg"></div>
+        </div>
+    </div>
+);
+
+const SkeletonTaskCard = () => (
+    <div className="emp-dash-task-card skeleton-card">
+        <div className="skeleton skeleton-badge"></div>
+        <div className="skeleton skeleton-text-md"></div>
+        <div className="skeleton skeleton-text-sm"></div>
+    </div>
+);
+
+// Quick Action Button Component
+const QuickActionButton = ({ icon: Icon, label, to, color }) => (
+    <Link to={to} className="emp-dash-quick-action" style={{ '--action-color': color }}>
+        <div className="emp-dash-quick-action-icon">
+            <Icon size={20} />
+        </div>
+        <span>{label}</span>
+        <ArrowRight size={16} className="emp-dash-quick-action-arrow" />
+    </Link>
+);
+
 const EmployeeDashboard = () => {
     const { user } = useAuth();
     const [tasks, setTasks] = useState([]);
     const [events, setEvents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [quote, setQuote] = useState("");
+    const [lastUpdated, setLastUpdated] = useState(null);
 
     useEffect(() => {
         const updateQuote = () => {
@@ -44,182 +87,303 @@ const EmployeeDashboard = () => {
             setQuote(MOTIVATIONAL_QUOTES[hour % MOTIVATIONAL_QUOTES.length]);
         };
         updateQuote();
-        const interval = setInterval(updateQuote, 60000); // Check every minute
+        const interval = setInterval(updateQuote, 60000);
         return () => clearInterval(interval);
     }, []);
 
-    useEffect(() => {
-        const fetchData = async () => {
+    const fetchData = useCallback(async (showRefresh = false) => {
+        if (showRefresh) {
+            setIsRefreshing(true);
+        } else {
             setIsLoading(true);
-            try {
-                const [tasksRes, eventsRes] = await Promise.all([
-                    taskService.getAll(),
-                    calendarService.getAll()
-                ]);
+        }
 
-                if (tasksRes.data) {
-                    // Filter tasks assigned to the current user
-                    // Assuming user.employeeId matches tasks.assignee_id
-                    // If user.employeeId is not set (e.g. new user not yet linked), this might be empty
-                    const myTasks = tasksRes.data.filter(t => t.assignee_id === user?.employeeId);
-                    setTasks(myTasks);
-                }
+        try {
+            const [tasksRes, eventsRes] = await Promise.all([
+                taskService.getAll(),
+                calendarService.getAll()
+            ]);
 
-                if (eventsRes.data) {
-                    // Filter for future events and sort by date
-                    const futureEvents = eventsRes.data
-                        .filter(e => new Date(e.date) >= new Date().setHours(0, 0, 0, 0))
-                        .sort((a, b) => new Date(a.date) - new Date(b.date))
-                        .slice(0, 3); // Take top 3
-                    setEvents(futureEvents);
-                }
-
-            } catch (error) {
-                console.error("Error fetching dashboard data:", error);
-            } finally {
-                setIsLoading(false);
+            if (tasksRes.data) {
+                const myTasks = tasksRes.data.filter(t => t.assignee_id === user?.employeeId);
+                setTasks(myTasks);
             }
-        };
 
+            if (eventsRes.data) {
+                const futureEvents = eventsRes.data
+                    .filter(e => new Date(e.date) >= new Date().setHours(0, 0, 0, 0))
+                    .sort((a, b) => new Date(a.date) - new Date(b.date))
+                    .slice(0, 5);
+                setEvents(futureEvents);
+            }
+
+            setLastUpdated(new Date());
+        } catch (error) {
+            console.error("Error fetching dashboard data:", error);
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
+        }
+    }, [user?.employeeId]);
+
+    useEffect(() => {
         if (user) {
             fetchData();
+            // Auto-refresh every 5 minutes
+            const interval = setInterval(() => fetchData(true), 5 * 60 * 1000);
+            return () => clearInterval(interval);
         }
-    }, [user]);
+    }, [user, fetchData]);
 
-    if (isLoading) {
-        return <LoadingSpinner size="lg" message="Loading your dashboard..." />;
-    }
+    const handleRefresh = () => {
+        fetchData(true);
+    };
 
+    // Time-based greeting
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return { text: "Good morning", icon: Sunrise, color: "#f59e0b" };
+        if (hour < 17) return { text: "Good afternoon", icon: Sun, color: "#f97316" };
+        if (hour < 21) return { text: "Good evening", icon: Coffee, color: "#8b5cf6" };
+        return { text: "Good night", icon: Moon, color: "#6366f1" };
+    };
+
+    const greeting = getGreeting();
     const pendingTasks = tasks.filter(t => t.status !== 'done');
     const completedTasks = tasks.filter(t => t.status === 'done');
+    const todayEvents = events.filter(e => {
+        const eventDate = new Date(e.date).toDateString();
+        const today = new Date().toDateString();
+        return eventDate === today;
+    });
 
     const getPriorityColor = (priority) => {
         switch (priority) {
-            case "high": return "text-red-600 bg-red-50 border-red-200";
-            case "medium": return "text-amber-600 bg-amber-50 border-amber-200";
-            case "low": return "text-blue-600 bg-blue-50 border-blue-200";
-            default: return "text-gray-600 bg-gray-50 border-gray-200";
+            case "high": return { bg: "#fef2f2", text: "#dc2626", border: "#fecaca" };
+            case "medium": return { bg: "#fffbeb", text: "#d97706", border: "#fde68a" };
+            case "low": return { bg: "#eff6ff", text: "#2563eb", border: "#bfdbfe" };
+            default: return { bg: "#f9fafb", text: "#6b7280", border: "#e5e7eb" };
         }
     };
 
-    return (
-        <div className="h-full flex flex-col gap-6 overflow-y-auto pb-6">
-            {/* Welcome Section */}
-            <div className="card p-8">
-                <div className="flex flex-col gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold mb-2 text-gray-900">Welcome back, {user?.name?.split(' ')[0] || 'Team Member'} 👋</h1>
-                        <p className="text-gray-500">Here's what's happening today.</p>
+    const formatRelativeDate = (date) => {
+        const eventDate = new Date(date);
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        if (eventDate.toDateString() === today.toDateString()) return "Today";
+        if (eventDate.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+        return eventDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    };
+
+    if (isLoading) {
+        return (
+            <div className="emp-dash-container">
+                {/* Welcome Skeleton */}
+                <div className="emp-dash-welcome skeleton-welcome">
+                    <div className="skeleton skeleton-title-lg"></div>
+                    <div className="skeleton skeleton-text-md" style={{ width: '60%', marginTop: '8px' }}></div>
+                    <div className="skeleton skeleton-quote"></div>
+                </div>
+
+                {/* Stats Skeleton */}
+                <div className="emp-dash-stats-grid">
+                    <SkeletonStatCard />
+                    <SkeletonStatCard />
+                    <SkeletonStatCard />
+                </div>
+
+                {/* Content Skeleton */}
+                <div className="emp-dash-content-grid">
+                    <div className="emp-dash-tasks-section">
+                        <div className="skeleton skeleton-section-title"></div>
+                        <SkeletonTaskCard />
+                        <SkeletonTaskCard />
+                        <SkeletonTaskCard />
                     </div>
-                    <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4">
-                        <p className="text-indigo-700 italic font-medium">"{quote}"</p>
+                    <div className="emp-dash-events-section">
+                        <div className="skeleton skeleton-section-title"></div>
+                        <div className="skeleton skeleton-event-card"></div>
                     </div>
                 </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="emp-dash-container">
+            {/* Welcome Section */}
+            <div className="emp-dash-welcome">
+                <div className="emp-dash-welcome-header">
+                    <div className="emp-dash-welcome-content">
+                        <div className="emp-dash-greeting">
+                            <greeting.icon size={28} style={{ color: greeting.color }} />
+                            <h1>{greeting.text}, {user?.name?.split(' ')[0] || 'Team Member'}!</h1>
+                        </div>
+                        <p className="emp-dash-subtitle">Here's what's happening today • {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+                    </div>
+                    <div className="emp-dash-header-actions">
+                        {lastUpdated && (
+                            <span className="emp-dash-last-updated">
+                                <Clock size={12} />
+                                {lastUpdated.toLocaleTimeString()}
+                            </span>
+                        )}
+                        <button
+                            className={`emp-dash-refresh-btn ${isRefreshing ? 'refreshing' : ''}`}
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                        >
+                            <RefreshCw size={16} className={isRefreshing ? 'spin' : ''} />
+                        </button>
+                    </div>
+                </div>
+                <div className="emp-dash-quote">
+                    <Sparkles size={16} className="emp-dash-quote-icon" />
+                    <p>"{quote}"</p>
+                </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="emp-dash-quick-actions">
+                <QuickActionButton icon={ClipboardList} label="View Tasks" to="/tasks" color="#4f46e5" />
+                <QuickActionButton icon={CalendarPlus} label="Calendar" to="/calendar" color="#10b981" />
+                <QuickActionButton icon={Timer} label="Time Track" to="/time-tracking" color="#f59e0b" />
+                <QuickActionButton icon={FileText} label="Leave Request" to="/leave" color="#ec4899" />
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="card p-5 flex items-center gap-4 border-l-4 border-indigo-500">
-                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full">
-                        <ListTodo size={24} />
+            <div className="emp-dash-stats-grid">
+                <div className="emp-dash-stat-card indigo">
+                    <div className="emp-dash-stat-icon">
+                        <ListTodo size={22} />
                     </div>
-                    <div>
-                        <p className="text-sm text-muted font-medium">Pending Tasks</p>
-                        <h3 className="text-2xl font-bold text-main">{pendingTasks.length}</h3>
-                    </div>
-                </div>
-                <div className="card p-5 flex items-center gap-4 border-l-4 border-green-500">
-                    <div className="p-3 bg-green-50 text-green-600 rounded-full">
-                        <CheckCircle size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-muted font-medium">Completed Tasks</p>
-                        <h3 className="text-2xl font-bold text-main">{completedTasks.length}</h3>
+                    <div className="emp-dash-stat-content">
+                        <span className="emp-dash-stat-label">Pending Tasks</span>
+                        <span className="emp-dash-stat-value">{pendingTasks.length}</span>
                     </div>
                 </div>
-                <div className="card p-5 flex items-center gap-4 border-l-4 border-purple-500">
-                    <div className="p-3 bg-purple-50 text-purple-600 rounded-full">
-                        <CalendarIcon size={24} />
+                <div className="emp-dash-stat-card green">
+                    <div className="emp-dash-stat-icon">
+                        <CheckCircle size={22} />
                     </div>
-                    <div>
-                        <p className="text-sm text-muted font-medium">Upcoming Events</p>
-                        <h3 className="text-2xl font-bold text-main">{events.length}</h3>
+                    <div className="emp-dash-stat-content">
+                        <span className="emp-dash-stat-label">Completed</span>
+                        <span className="emp-dash-stat-value">{completedTasks.length}</span>
+                    </div>
+                </div>
+                <div className="emp-dash-stat-card purple">
+                    <div className="emp-dash-stat-icon">
+                        <CalendarIcon size={22} />
+                    </div>
+                    <div className="emp-dash-stat-content">
+                        <span className="emp-dash-stat-label">Today's Events</span>
+                        <span className="emp-dash-stat-value">{todayEvents.length}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* My Tasks Column */}
-                <div className="lg:col-span-2 flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-main flex items-center gap-2">
-                            <ListTodo className="text-primary" size={24} />
+            {/* Main Content Grid */}
+            <div className="emp-dash-content-grid">
+                {/* Tasks Section */}
+                <div className="emp-dash-tasks-section">
+                    <div className="emp-dash-section-header">
+                        <h2>
+                            <ListTodo size={20} />
                             My Active Tasks
                         </h2>
-                        <Link to="/tasks" className="text-sm text-primary hover:underline font-medium">
-                            View All Tasks
+                        <Link to="/tasks" className="emp-dash-view-all">
+                            View All <ArrowRight size={14} />
                         </Link>
                     </div>
 
-                    <div className="flex flex-col gap-3">
+                    <div className="emp-dash-tasks-list">
                         {pendingTasks.length > 0 ? (
-                            pendingTasks.slice(0, 5).map(task => (
-                                <div key={task.id} className="card p-4 hover:shadow-md transition-shadow border border-gray-100">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)} capitalize`}>
-                                            {task.priority}
-                                        </span>
-                                        <span className="text-xs text-muted flex items-center gap-1">
-                                            <Clock size={12} />
-                                            Due {new Date(task.due_date).toLocaleDateString()}
-                                        </span>
+                            pendingTasks.slice(0, 5).map((task, index) => {
+                                const priorityStyle = getPriorityColor(task.priority);
+                                return (
+                                    <div
+                                        key={task.id}
+                                        className="emp-dash-task-card"
+                                        style={{ animationDelay: `${index * 0.1}s` }}
+                                    >
+                                        <div className="emp-dash-task-header">
+                                            <span
+                                                className="emp-dash-task-priority"
+                                                style={{
+                                                    backgroundColor: priorityStyle.bg,
+                                                    color: priorityStyle.text,
+                                                    borderColor: priorityStyle.border
+                                                }}
+                                            >
+                                                {task.priority}
+                                            </span>
+                                            <span className="emp-dash-task-due">
+                                                <Clock size={12} />
+                                                {formatRelativeDate(task.due_date)}
+                                            </span>
+                                        </div>
+                                        <h3 className="emp-dash-task-title">{task.title}</h3>
+                                        {task.description && (
+                                            <p className="emp-dash-task-desc">{task.description}</p>
+                                        )}
                                     </div>
-                                    <h3 className="font-semibold text-main mb-1">{task.title}</h3>
-                                    <p className="text-sm text-muted line-clamp-1">{task.description}</p>
-                                </div>
-                            ))
+                                );
+                            })
                         ) : (
-                            <div className="card p-8 text-center text-muted bg-gray-50 border-dashed border-2 border-gray-200">
-                                <CheckCircle className="mx-auto mb-2 text-green-500" size={32} />
-                                <p>No pending tasks! Great job.</p>
+                            <div className="emp-dash-empty-state">
+                                <div className="emp-dash-empty-icon success">
+                                    <CheckCircle size={32} />
+                                </div>
+                                <h3>All caught up!</h3>
+                                <p>No pending tasks. Great job staying on top of your work!</p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Upcoming Events Column */}
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-main flex items-center gap-2">
-                            <CalendarIcon className="text-primary" size={24} />
+                {/* Events Section */}
+                <div className="emp-dash-events-section">
+                    <div className="emp-dash-section-header">
+                        <h2>
+                            <CalendarIcon size={20} />
                             Upcoming Events
                         </h2>
-                        <Link to="/calendar" className="text-sm text-primary hover:underline font-medium">
-                            View Calendar
+                        <Link to="/calendar" className="emp-dash-view-all">
+                            Calendar <ArrowRight size={14} />
                         </Link>
                     </div>
 
-                    <div className="card p-0 overflow-hidden">
+                    <div className="emp-dash-events-list">
                         {events.length > 0 ? (
-                            <div className="divide-y divide-gray-100">
-                                {events.map(event => (
-                                    <div key={event.id} className="p-4 hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex flex-col items-center justify-center text-xs font-bold leading-tight">
-                                                <span>{new Date(event.date).getDate()}</span>
-                                                <span className="text-[10px] uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
-                                            </div>
-                                            <div>
-                                                <h4 className="font-semibold text-main text-sm">{event.title}</h4>
-                                                <p className="text-xs text-muted">{event.time} • {event.location || 'Remote'}</p>
-                                            </div>
-                                        </div>
+                            events.map((event, index) => (
+                                <div
+                                    key={event.id}
+                                    className="emp-dash-event-card"
+                                    style={{ animationDelay: `${index * 0.1}s` }}
+                                >
+                                    <div className="emp-dash-event-date">
+                                        <span className="emp-dash-event-day">{new Date(event.date).getDate()}</span>
+                                        <span className="emp-dash-event-month">
+                                            {new Date(event.date).toLocaleString('default', { month: 'short' })}
+                                        </span>
                                     </div>
-                                ))}
-                            </div>
+                                    <div className="emp-dash-event-content">
+                                        <h4>{event.title}</h4>
+                                        <p>
+                                            <Clock size={12} />
+                                            {event.time} • {event.location || 'Remote'}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))
                         ) : (
-                            <div className="p-8 text-center text-muted">
-                                <p>No upcoming events.</p>
+                            <div className="emp-dash-empty-state small">
+                                <div className="emp-dash-empty-icon info">
+                                    <AlertCircle size={24} />
+                                </div>
+                                <p>No upcoming events scheduled</p>
                             </div>
                         )}
                     </div>

@@ -26,6 +26,7 @@ import {
   X
 } from "lucide-react";
 import Toast from "../../components/common/Toast";
+import { SkeletonSettingsSection, Skeleton } from "../../components/common/Skeleton";
 import "./settings-styles.css";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
@@ -855,6 +856,41 @@ const SettingsView = () => {
         return renderAccountSection();
     }
   };
+
+  // Skeleton Loading State
+  if (isLoading) {
+    return (
+      <div className="settings-container">
+        <div className="settings-header">
+          <div className="settings-header-content">
+            <Skeleton width="48px" height="48px" borderRadius="12px" />
+            <div>
+              <Skeleton width="120px" height="28px" />
+              <Skeleton width="200px" height="14px" className="mt-2" />
+            </div>
+          </div>
+        </div>
+        <div className="settings-layout">
+          <aside className="settings-sidebar">
+            <nav className="settings-nav">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px' }}>
+                  <Skeleton width="36px" height="36px" borderRadius="8px" />
+                  <div>
+                    <Skeleton width="80px" height="14px" />
+                    <Skeleton width="120px" height="10px" className="mt-1" />
+                  </div>
+                </div>
+              ))}
+            </nav>
+          </aside>
+          <main className="settings-main">
+            <SkeletonSettingsSection rows={4} />
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="settings-container">

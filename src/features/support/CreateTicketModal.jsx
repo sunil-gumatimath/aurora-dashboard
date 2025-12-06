@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Save, AlertCircle } from "lucide-react";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { X, Save, AlertCircle, Loader2 } from "lucide-react";
 
 const CreateTicketModal = ({ isOpen, onClose, onSubmit, isLoading, ticketToEdit = null }) => {
     const [formData, setFormData] = useState({
@@ -178,7 +177,7 @@ const CreateTicketModal = ({ isOpen, onClose, onSubmit, isLoading, ticketToEdit 
                         >
                             {isLoading ? (
                                 <>
-                                    <LoadingSpinner size="sm" color="white" />
+                                    <Loader2 size={18} className="animate-spin" />
                                     <span>{ticketToEdit ? "Saving..." : "Submitting..."}</span>
                                 </>
                             ) : (
