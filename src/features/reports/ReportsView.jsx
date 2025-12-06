@@ -9,6 +9,7 @@ import {
     getTimeTrackingReport, getEmployeeSummaryReport,
     getDepartments, exportToCSV, printReport
 } from '../../services/reportsService.js';
+import { SkeletonStatCard, SkeletonTable, Skeleton } from '../../components/common/Skeleton';
 import './ReportsView.css';
 
 const ReportsView = () => {
@@ -220,7 +221,16 @@ const ReportsView = () => {
             </div>
 
             <div className="reports-content" id="report-content">
-                {loading ? <div className="reports-loading"><RefreshCw size={32} className="spin" /><p>Loading...</p></div>
+                {loading ? (
+                    <>
+                        <div className="reports-summary-grid" style={{ marginBottom: '24px' }}>
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <SkeletonStatCard key={i} hasIcon={true} />
+                            ))}
+                        </div>
+                        <SkeletonTable rows={8} columns={5} hasAvatar={true} />
+                    </>
+                )
                     : error ? <div className="reports-error"><p>{error}</p><button onClick={fetchReport}>Retry</button></div>
                         : <>
                             <div className="reports-section-header"><ReportIcon size={20} /><h2>{reportTypes.find(r => r.id === activeReport)?.label} Report</h2><span className="date-range-badge">{new Date(dateRange.start).toLocaleDateString()} - {new Date(dateRange.end).toLocaleDateString()}</span></div>

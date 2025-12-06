@@ -3,7 +3,7 @@ import { Plus, Search, Filter, MessageSquare, Clock, CheckCircle, AlertCircle, L
 import { taskService } from "../../services/taskService";
 import CreateTicketModal from "./CreateTicketModal";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { SkeletonStatCard, SkeletonTable, Skeleton } from "../../components/common/Skeleton";
 import Toast from "../../components/common/Toast";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -196,7 +196,9 @@ const SupportView = () => {
                 </div>
 
                 {isLoading ? (
-                    <LoadingSpinner size="lg" message="Loading tickets..." />
+                    <div style={{ padding: '24px' }}>
+                        <SkeletonTable rows={6} columns={6} hasCheckbox={false} />
+                    </div>
                 ) : tickets.length > 0 ? (
                     <div className="overflow-y-auto flex-1">
                         <table className="w-full text-left border-collapse">

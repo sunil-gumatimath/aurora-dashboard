@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { X, Calendar, Clock, MapPin, Type, AlignLeft } from "lucide-react";
+import { X, Calendar, Clock, MapPin, Type, AlignLeft, Repeat, Sun } from "lucide-react";
 
 const AddEventModal = ({
     isOpen,
@@ -14,9 +14,12 @@ const AddEventModal = ({
         title: "",
         date: "",
         time: "",
+        endTime: "",
         type: "event",
         location: "",
         description: "",
+        isAllDay: false,
+        recurrence: "none",
     });
 
     useEffect(() => {
@@ -25,10 +28,13 @@ const AddEventModal = ({
                 setFormData({
                     title: eventToEdit.title || "",
                     date: eventToEdit.date ? new Date(eventToEdit.date).toLocaleDateString("en-CA") : "",
-                    time: eventToEdit.time || "",
+                    time: eventToEdit.time === "All Day" ? "" : (eventToEdit.time || ""),
+                    endTime: eventToEdit.endTime || "",
                     type: eventToEdit.type || "event",
                     location: eventToEdit.location || "",
                     description: eventToEdit.description || "",
+                    isAllDay: eventToEdit.time === "All Day" || eventToEdit.isAllDay || false,
+                    recurrence: eventToEdit.recurrence || "none",
                 });
             } else {
                 const dateToUse = initialDate || new Date();
@@ -36,25 +42,43 @@ const AddEventModal = ({
                     title: "",
                     date: dateToUse.toLocaleDateString("en-CA"),
                     time: "",
+                    endTime: "",
                     type: "event",
                     location: "",
                     description: "",
+                    isAllDay: false,
+                    recurrence: "none",
                 });
             }
         }
     }, [isOpen, initialDate, eventToEdit]);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        const { name, value, type, checked } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: type === "checkbox" ? checked : value,
+        }));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(formData);
+        const submitData = {
+            ...formData,
+            time: formData.isAllDay ? "All Day" : formData.time,
+        };
+        onSave(submitData);
     };
 
     if (!isOpen) return null;
+
+    const recurrenceOptions = [
+        { value: "none", label: "Does not repeat" },
+        { value: "daily", label: "Daily" },
+        { value: "weekly", label: "Weekly" },
+        { value: "monthly", label: "Monthly" },
+        { value: "yearly", label: "Yearly" },
+    ];
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -77,7 +101,7 @@ const AddEventModal = ({
 
                 {/* Window Body */}
                 <form onSubmit={handleSubmit}>
-                    <div className="p-6 space-y-4">
+                    <div className="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
                         <div className="space-y-1.5">
                             <label className="block text-sm font-medium text-gray-700">Event Name</label>
                             <div className="relative">
@@ -94,6 +118,21 @@ const AddEventModal = ({
                                     placeholder="Enter event name..."
                                 />
                             </div>
+                        </div>
+
+                        {/* All Day Toggle */}
+                        <div className="flex items-center gap-3 py-2 px-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <Sun size={18} className="text-amber-500" />
+                            <label className="flex items-center gap-2 cursor-pointer flex-1">
+                                <input
+                                    type="checkbox"
+                                    name="isAllDay"
+                                    checked={formData.isAllDay}
+                                    onChange={handleChange}
+                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span className="text-sm font-medium text-gray-700">All-day event</span>
+                            </label>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -115,24 +154,6 @@ const AddEventModal = ({
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="block text-sm font-medium text-gray-700">Time</label>
-                                <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                        <Clock size={16} className="text-gray-400" />
-                                    </div>
-                                    <input
-                                        type="time"
-                                        name="time"
-                                        value={formData.time}
-                                        onChange={handleChange}
-                                        className="form-input !pl-9 w-full border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md text-sm"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
                                 <label className="block text-sm font-medium text-gray-700">Type</label>
                                 <select
                                     name="type"
@@ -146,22 +167,81 @@ const AddEventModal = ({
                                     <option value="deadline">Deadline</option>
                                 </select>
                             </div>
+                        </div>
 
-                            <div className="space-y-1.5">
-                                <label className="block text-sm font-medium text-gray-700">Location</label>
-                                <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                        <MapPin size={16} className="text-gray-400" />
+                        {/* Time Fields - Hidden when All Day is selected */}
+                        {!formData.isAllDay && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="block text-sm font-medium text-gray-700">Start Time</label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <Clock size={16} className="text-gray-400" />
+                                        </div>
+                                        <input
+                                            type="time"
+                                            name="time"
+                                            value={formData.time}
+                                            onChange={handleChange}
+                                            className="form-input !pl-9 w-full border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md text-sm"
+                                        />
                                     </div>
-                                    <input
-                                        type="text"
-                                        name="location"
-                                        value={formData.location}
-                                        onChange={handleChange}
-                                        className="form-input !pl-9 w-full border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md text-sm"
-                                        placeholder="Add location"
-                                    />
                                 </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="block text-sm font-medium text-gray-700">End Time</label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <Clock size={16} className="text-gray-400" />
+                                        </div>
+                                        <input
+                                            type="time"
+                                            name="endTime"
+                                            value={formData.endTime}
+                                            onChange={handleChange}
+                                            className="form-input !pl-9 w-full border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Recurrence */}
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-gray-700">Repeat</label>
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <Repeat size={16} className="text-gray-400" />
+                                </div>
+                                <select
+                                    name="recurrence"
+                                    value={formData.recurrence}
+                                    onChange={handleChange}
+                                    className="form-select !pl-9 w-full border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md text-sm"
+                                >
+                                    {recurrenceOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-gray-700">Location</label>
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <MapPin size={16} className="text-gray-400" />
+                                </div>
+                                <input
+                                    type="text"
+                                    name="location"
+                                    value={formData.location}
+                                    onChange={handleChange}
+                                    className="form-input !pl-9 w-full border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md text-sm"
+                                    placeholder="Add location"
+                                />
                             </div>
                         </div>
 
@@ -175,7 +255,7 @@ const AddEventModal = ({
                                     name="description"
                                     value={formData.description}
                                     onChange={handleChange}
-                                    className="form-textarea !pl-9 w-full min-h-[100px] py-2 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md text-sm resize-none"
+                                    className="form-textarea !pl-9 w-full min-h-[80px] py-2 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md text-sm resize-none"
                                     placeholder="Add description..."
                                 />
                             </div>

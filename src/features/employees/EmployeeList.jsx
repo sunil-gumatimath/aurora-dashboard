@@ -12,7 +12,7 @@ import { employeeService } from "../../services/employeeService";
 import { supabase } from "../../lib/supabase";
 import Toast from "../../components/common/Toast";
 import EmployeeCard from "../../components/EmployeeCard";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { SkeletonEmployeeCard, SkeletonFilterBar, Skeleton } from "../../components/common/Skeleton";
 import FilterPanel from "../../components/FilterPanel";
 import SortControls from "../../components/SortControls";
 import BulkActionToolbar from "../../components/BulkActionToolbar";
@@ -395,7 +395,23 @@ const EmployeeList = () => {
   if (isLoading) {
     return (
       <div className="employees-container">
-        <LoadingSpinner size="lg" message="Loading employees..." />
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <Skeleton width="200px" height="32px" />
+            <Skeleton width="180px" height="14px" className="mt-2" />
+          </div>
+        </div>
+
+        {/* Search & Actions Skeleton */}
+        <SkeletonFilterBar hasSearch={true} filterCount={2} />
+
+        {/* Grid Skeleton */}
+        <div className="employees-grid skeleton-stagger">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <SkeletonEmployeeCard key={index} />
+          ))}
+        </div>
       </div>
     );
   }
