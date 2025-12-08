@@ -1,9 +1,5 @@
 # Dependencies
 node_modules
-bun.lock
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
 
 # Build output (we build fresh in Docker)
 dist
@@ -43,6 +39,9 @@ README.md
 Dockerfile
 docker-compose*.yml
 .dockerignore
+
+# Project files not needed in image
+database/
 
 # Misc
 .DS_Store
