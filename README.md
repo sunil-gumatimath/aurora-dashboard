@@ -2,9 +2,9 @@
 
 A comprehensive **Employee Management System** built with modern web technologies. Streamline HR operations, workforce management, and organizational productivity with an intuitive, feature-rich dashboard.
 
-## ✨ Features
+## Features
 
-### 👥 HR Core
+### HR Core
 
 - **Employee Profiles**: Complete employee information with personal details, contact info, and organizational data
 - **Document Management**: Upload and manage employee documents, contracts, and certificates
@@ -12,7 +12,7 @@ A comprehensive **Employee Management System** built with modern web technologie
 - **Bank & Education Details**: Secure storage of banking information and educational background
 - **Performance Reviews**: Track employee performance with reviews and goal setting
 
-### 📊 Workforce Management
+### Workforce Management
 
 - **Time Tracking**: Clock in/out functionality with break tracking and overtime calculation
 - **Leave Management**: Multiple leave types (Annual, Sick, Maternity, etc.) with approval workflows
@@ -20,14 +20,14 @@ A comprehensive **Employee Management System** built with modern web technologie
 - **Payroll Processing**: Salary calculations, allowances, deductions, and payslip generation
 - **Expense Tracking**: Employee expense claims and reimbursement management
 
-### 🎯 Productivity Tools
+### Productivity Tools
 
 - **Task Management**: Kanban-style task board with drag-and-drop functionality
 - **Interactive Calendar**: Schedule events, meetings, and holidays with visual calendar view
 - **Analytics Dashboard**: Comprehensive insights with charts, metrics, and performance indicators
 - **Reports Generation**: Detailed reports on employees, attendance, leave, and productivity
 
-### 🛠️ Support & Development
+### Support & Development
 
 - **Help Desk**: Internal ticketing system for employee support requests
 - **Training Management**: Course enrollment, progress tracking, and certifications
@@ -35,7 +35,7 @@ A comprehensive **Employee Management System** built with modern web technologie
 - **Onboarding Workflows**: Structured onboarding process for new employees
 - **Announcements**: Company-wide announcements and notifications
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 
@@ -63,7 +63,7 @@ A comprehensive **Employee Management System** built with modern web technologie
 - **Bun** - Fast JavaScript runtime and package manager
 - **ESLint** - Code linting and quality assurance
 
-## 🗄️ Database Schema
+## Database Schema
 
 **26 Tables** with comprehensive relationships:
 
@@ -97,7 +97,7 @@ A comprehensive **Employee Management System** built with modern web technologie
 
 **Security**: All tables use Row Level Security (RLS) with role-based policies.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -158,7 +158,7 @@ bun run build
 bun run preview
 ```
 
-## 🐳 Docker Deployment
+## Docker Deployment
 
 ### Quick Docker Setup
 
@@ -184,7 +184,7 @@ docker run -d \
   aurora-ems
 ```
 
-## 📊 Default Login Credentials
+## Default Login Credentials
 
 **Admin Access:**
 
@@ -193,7 +193,7 @@ docker run -d \
 
 **Demo Employees:** Various roles available in seed data
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 aurora-ems/
@@ -220,7 +220,7 @@ aurora-ems/
 └── vite.config.js    # Build configuration
 ```
 
-## 🔧 Available Scripts
+## Available Scripts
 
 ```bash
 bun run dev          # Start development server
@@ -229,63 +229,43 @@ bun run preview      # Preview production build
 bun run lint         # Run ESLint
 ```
 
-## 🎨 Key Features Showcase
+## Key Features Showcase
 
-### 📈 Analytics Dashboard
+### Analytics Dashboard
 
 - Real-time employee metrics and KPIs
 - Interactive charts (growth trends, department distribution)
 - Performance analytics by department
 - Recent activity timeline
 
-### 📅 Calendar Management
+### Calendar Management
 
 - Full calendar view with event creation
 - Holiday management and display
 - Meeting scheduling and invitations
 - Recurring event support
 
-### ⏱️ Time Tracking
+### Time Tracking
 
 - Clock in/out with GPS location
 - Break time tracking
 - Overtime calculation
 - Timesheet approval workflow
 
-### 📋 Leave Management
+### Leave Management
 
 - Multiple leave types (Annual, Sick, Maternity, etc.)
 - Leave balance tracking
 - Approval workflow for managers
 - Holiday calendar integration
 
-### ✅ Task Management
+### Task Management
 
 - Kanban board with drag-and-drop
 - Task assignment and tracking
 - Priority and status management
 - Due date notifications
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
+## License
 
 This project is proprietary software. All rights reserved.
-
-## 🆘 Support
-
-For support and questions:
-
-- Create an issue in this repository
-- Use the in-app support ticket system
-- Contact the development team
-
----
-
-**Built with ❤️ for modern workforce management**
