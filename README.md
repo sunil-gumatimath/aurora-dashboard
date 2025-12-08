@@ -109,7 +109,11 @@ A comprehensive **Employee Management System** built with modern web technologie
 ```bash
 git clone https://github.com/sunil-gumatimath/emp-management-vibecode.git
 cd react-browser
+# With Bun (recommended)
 bun install
+
+# Or with npm
+npm install
 ```
 
 ### 2. Database Setup
@@ -138,7 +142,11 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 ### 4. Development Server
 
 ```bash
+# With Bun
 bun run dev
+
+# Or with npm
+npm run dev
 ```
 
 Access at `http://localhost:5173`
