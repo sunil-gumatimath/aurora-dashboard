@@ -1,7 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import PropTypes from "prop-types";
-import { X, AlertCircle, Edit2, Phone, IndianRupee } from "lucide-react";
+import { X, AlertCircle, Edit2, Phone, IndianRupee, Shield, Lock } from "lucide-react";
 import Avatar from "./common/Avatar";
+import { useAuth } from "../contexts/AuthContext";
+
+const ROLES = ["Admin", "Manager", "Employee"];
 
 const EditEmployeeModal = ({
   isOpen,
@@ -10,6 +13,8 @@ const EditEmployeeModal = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "Admin";
   // Initialize form data based on employee prop
   const initialFormData = useMemo(() => {
     if (employee) {
@@ -50,7 +55,7 @@ const EditEmployeeModal = ({
   const [errors, setErrors] = useState({});
 
   // Reset form when employee changes
-   
+
   useEffect(() => {
     if (employee) {
       setFormData({
@@ -221,20 +226,63 @@ const EditEmployeeModal = ({
               )}
             </div>
 
-            {/* Role */}
+            {/* Role — Admin Only Dropdown */}
             <div className="form-group">
-              <label htmlFor="edit-role" className="form-label">
+              <label htmlFor="edit-role" className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Shield size={13} style={{ color: isAdmin ? '#6366f1' : 'var(--text-muted)' }} />
                 Role <span className="text-red-500">*</span>
+                {isAdmin ? (
+                  <span style={{
+                    marginLeft: 'auto',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    padding: '1px 6px',
+                    borderRadius: '999px',
+                    background: 'rgba(99,102,241,0.12)',
+                    color: '#6366f1',
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase'
+                  }}>Admin Only</span>
+                ) : (
+                  <span style={{
+                    marginLeft: 'auto',
+                    fontSize: '10px',
+                    fontWeight: '600',
+                    padding: '1px 6px',
+                    borderRadius: '999px',
+                    background: 'var(--bg-body)',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px'
+                  }}><Lock size={9} /> Read Only</span>
+                )}
               </label>
-              <input
+              <select
                 id="edit-role"
-                type="text"
                 value={formData.role}
                 onChange={(e) => handleChange("role", e.target.value)}
-                className={`form-input ${errors.role ? "error" : ""}`}
-                placeholder="e.g., Senior Developer"
-                disabled={isLoading}
-              />
+                className={`form-select ${errors.role ? "error" : ""}`}
+                disabled={isLoading || !isAdmin}
+                style={isAdmin ? {
+                  borderColor: 'rgba(99,102,241,0.4)',
+                  boxShadow: '0 0 0 1px rgba(99,102,241,0.15)'
+                } : {
+                  opacity: 0.7,
+                  cursor: 'not-allowed'
+                }}
+                title={!isAdmin ? 'Only Admins can change roles' : 'Select access role'}
+              >
+                <option value="">Select role</option>
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+              {!isAdmin && (
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Lock size={10} /> Only Admins can change the access role.
+                </p>
+              )}
               {errors.role && (
                 <p className="form-error">
                   <AlertCircle size={12} /> {errors.role}
