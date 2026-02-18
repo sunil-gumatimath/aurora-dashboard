@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { X, AlertCircle, User } from "lucide-react";
+import { X, AlertCircle, User, Shield } from "lucide-react";
 import Avatar from "./common/Avatar";
+
+const ROLES = ["Admin", "Manager", "Employee"];
 
 const AddEmployeeModal = ({ isOpen, onClose, onSubmit, isLoading = false }) => {
   const [formData, setFormData] = useState({
@@ -175,18 +177,23 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, isLoading = false }) => {
 
             {/* Role */}
             <div className="form-group">
-              <label htmlFor="role" className="form-label">
+              <label htmlFor="role" className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Shield size={13} style={{ color: '#6366f1' }} />
                 Role <span className="text-red-500">*</span>
               </label>
-              <input
+              <select
                 id="role"
-                type="text"
                 value={formData.role}
                 onChange={(e) => handleChange("role", e.target.value)}
-                className={`form-input ${errors.role ? "error" : ""}`}
-                placeholder="e.g., Senior Developer"
+                className={`form-select ${errors.role ? "error" : ""}`}
                 disabled={isLoading}
-              />
+                style={{ borderColor: 'rgba(99,102,241,0.4)', boxShadow: '0 0 0 1px rgba(99,102,241,0.15)' }}
+              >
+                <option value="">Select role</option>
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
               {errors.role && (
                 <p className="form-error">
                   <AlertCircle size={12} /> {errors.role}
