@@ -18,25 +18,25 @@ WHERE email = 'admin@gmail.com';
 UPDATE public.employees 
 SET role = 'Manager', 
     department = 'Human Resources' 
-WHERE email = 'priya.sharma@aurora.com';
+WHERE email = 'priya.sharma@synergy.com';
 
 -- MANAGER 2: Rajesh Kumar
 UPDATE public.employees 
 SET role = 'Manager', 
     department = 'Engineering' 
-WHERE email = 'rajesh.kumar@aurora.com';
+WHERE email = 'rajesh.kumar@synergy.com';
 
 -- EMPLOYEE: Vikram Reddy
 UPDATE public.employees 
 SET role = 'Employee', 
     department = 'Engineering' 
-WHERE email = 'vikram.reddy@aurora.com';
+WHERE email = 'vikram.reddy@synergy.com';
 
 -- 3. Verify the updates
 SELECT name, email, role, department FROM public.employees 
 WHERE email IN (
     'admin@gmail.com', 
-    'priya.sharma@aurora.com', 
-    'rajesh.kumar@aurora.com', 
-    'vikram.reddy@aurora.com'
+    'priya.sharma@synergy.com', 
+    'rajesh.kumar@synergy.com', 
+    'vikram.reddy@synergy.com'
 );
