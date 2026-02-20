@@ -14,11 +14,18 @@
   /* Indigo 700 */
   --primary-light: #eef2ff;
   /* Indigo 50 */
+  --primary-dark: #3730a3;
 
   --bg-body: #f3f4f6;
   /* Gray 100 */
   --bg-surface: #ffffff;
   --bg-sidebar: #ffffff;
+  /* Variable aliases for components using alternate naming */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-main: #f3f4f6;
+  --bg-muted: #f9fafb;
+  --border-color: #e5e7eb;
 
   --text-main: #111827;
   /* Gray 900 */
@@ -26,6 +33,9 @@
   /* Gray 500 */
   --text-light: #9ca3af;
   /* Gray 400 */
+  /* Variable aliases */
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
 
   --border: #e5e7eb;
   /* Gray 200 */
@@ -45,6 +55,14 @@
   --danger-color: #ef4444;
   --neutral-bg: #f3f4f6;
   --neutral-text: #4b5563;
+
+  /* Component aliases (notification panel, etc.) */
+  --bg-tertiary: #f1f5f9;
+  --error: #ef4444;
+  --success: #10b981;
+  --info: #3b82f6;
+  --warning: #f59e0b;
+  --primary-rgb: 79, 70, 229;
 
   /* Spacing */
   --space-xs: 0.25rem;
@@ -85,13 +103,20 @@
   --bg-body: #0b0f19;
   --bg-surface: #131a28;
   --bg-sidebar: #131a28;
+  --bg-primary: #131a28;
+  --bg-secondary: #1a2332;
+  --bg-main: #0b0f19;
+  --bg-muted: #131a28;
+  --border-color: #1e293b;
 
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --text-light: #64748b;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
 
   --border: #1e293b;
-  --border-light: #0f172a;
+  --border-light: #1e293b;
   --border-hover: #334155;
 
   --success-bg: rgba(16, 185, 129, 0.15);
@@ -109,7 +134,15 @@
   --neutral-bg: #1e293b;
   --neutral-text: #e2e8f0;
 
+  --bg-tertiary: #1a2332;
+  --error: #f87171;
+  --success: #34d399;
+  --info: #60a5fa;
+  --warning: #fbbf24;
+  --primary-rgb: 79, 70, 229;
+
   --primary-light: rgba(79, 70, 229, 0.15);
+  --primary-dark: #6366f1;
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
@@ -943,7 +976,7 @@ button {
 
 .sidebar-footer {
   padding: var(--space-md) var(--space-lg);
-  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  border-top: 1px solid var(--border);
   background: var(--bg-sidebar);
   /* Ensure solid background */
   transition: all 0.3s ease;
@@ -965,7 +998,7 @@ button {
   justify-content: center;
   font-weight: 600;
   font-size: 0.875rem;
-  border: 2px solid white;
+  border: 2px solid var(--bg-surface);
   box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
 }
@@ -975,7 +1008,7 @@ button {
   height: 2.5rem;
   border-radius: var(--radius-full);
   object-fit: cover;
-  border: 2px solid white;
+  border: 2px solid var(--bg-surface);
   box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
 }
@@ -987,7 +1020,7 @@ button {
 }
 
 .user-avatar-sidebar-component {
-  border: 2px solid white;
+  border: 2px solid var(--bg-surface);
   box-shadow: var(--shadow-sm);
 }
 
