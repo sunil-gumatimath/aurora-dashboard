@@ -915,3 +915,48 @@
         width: 100%;
     }
 }
+
+/* Dark Mode Overrides */
+.dark .stat-icon.total {
+    background: rgba(79, 70, 229, 0.15);
+    color: #818cf8;
+}
+
+.dark .stat-icon.todo {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+}
+
+.dark .stat-icon.progress {
+    background: rgba(37, 99, 235, 0.15);
+    color: #60a5fa;
+}
+
+.dark .stat-icon.done {
+    background: rgba(22, 163, 74, 0.15);
+    color: #4ade80;
+}
+
+.dark .status-badge.status-to-do {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+}
+
+.dark .status-badge.status-in-progress {
+    background: rgba(37, 99, 235, 0.15);
+    color: #60a5fa;
+}
+
+.dark .status-badge.status-review {
+    background: rgba(217, 119, 6, 0.15);
+    color: #fbbf24;
+}
+
+.dark .status-badge.status-done {
+    background: rgba(22, 163, 74, 0.15);
+    color: #4ade80;
+}
+
+.dark .tasks-filters .filter-group select {
+    color: var(--text-main);
+}
