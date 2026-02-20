@@ -1370,3 +1370,316 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* =========================================
+   DARK MODE - Calendar Overrides
+   ========================================= */
+.dark .calendar-weekdays {
+    background: var(--bg-secondary);
+}
+
+.dark .calendar-weekday {
+    color: var(--text-muted);
+}
+
+.dark .calendar-day {
+    background: var(--bg-primary);
+    border-color: var(--border);
+}
+
+.dark .calendar-day:hover {
+    background: var(--bg-secondary);
+}
+
+.dark .calendar-day.not-current-month {
+    background: var(--bg-body);
+}
+
+.dark .calendar-day.not-current-month .calendar-day-number {
+    color: var(--text-light) !important;
+}
+
+.dark .calendar-day-number {
+    color: var(--text-main);
+}
+
+.dark .calendar-day.today {
+    background: rgba(124, 58, 237, 0.1);
+}
+
+.dark .calendar-day-event-count {
+    color: var(--text-muted);
+}
+
+.dark .calendar-day-add-button {
+    background: var(--border-hover);
+    color: var(--text-muted);
+}
+
+.dark .calendar-day-add-button:hover {
+    background: #4f46e5;
+    color: white;
+}
+
+.dark .calendar-more-events {
+    color: var(--text-muted);
+}
+
+/* Week View Dark */
+.dark .calendar-week-day {
+    background: var(--bg-primary);
+    border-color: var(--border);
+}
+
+.dark .calendar-week-day:hover {
+    background: var(--bg-secondary);
+}
+
+.dark .calendar-week-header {
+    background: var(--bg-secondary);
+    border-color: var(--border);
+}
+
+.dark .week-day-name {
+    color: var(--text-muted);
+}
+
+.dark .week-day-number {
+    color: var(--text-main);
+}
+
+.dark .add-event-week-btn {
+    border-color: var(--border-hover);
+    color: var(--text-muted);
+}
+
+.dark .add-event-week-btn:hover {
+    border-color: #4f46e5;
+    color: #4f46e5;
+    background: rgba(79, 70, 229, 0.1);
+}
+
+/* Day View Dark */
+.dark .day-view-time {
+    color: var(--text-muted);
+}
+
+.dark .day-view-hour {
+    border-color: var(--border);
+}
+
+/* Sidebar Events Dark */
+.dark .calendar-event-card {
+    background: var(--bg-secondary);
+}
+
+.dark .calendar-event-card:hover {
+    background: var(--border);
+}
+
+.dark .calendar-event-time {
+    color: var(--text-muted);
+}
+
+.dark .calendar-event-action-btn.edit {
+    background: var(--border-hover);
+    color: var(--text-muted);
+}
+
+.dark .calendar-event-action-btn.edit:hover {
+    background: #4f46e5;
+    color: white;
+}
+
+.dark .calendar-event-action-btn.delete {
+    background: var(--border-hover);
+    color: var(--text-muted);
+}
+
+.dark .calendar-event-action-btn.delete:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Grid Container Dark */
+.dark .calendar-grid-container {
+    border-color: var(--border);
+}
+
+/* Modal Dark */
+.dark .event-modal-container {
+    background: var(--bg-surface);
+}
+
+.dark .event-modal-header {
+    background: var(--bg-secondary);
+    border-color: var(--border);
+}
+
+.dark .event-modal-title h2 {
+    color: var(--text-main);
+}
+
+.dark .event-modal-close {
+    color: var(--text-muted);
+}
+
+.dark .event-modal-close:hover {
+    background: var(--border-hover);
+    color: var(--text-main);
+}
+
+.dark .event-modal-footer {
+    background: var(--bg-secondary);
+    border-color: var(--border);
+}
+
+.dark .btn-cancel {
+    background: var(--bg-surface);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+.dark .btn-cancel:hover {
+    background: var(--bg-secondary);
+    color: var(--text-main);
+}
+
+/* Form Fields Dark */
+.dark .event-form-field label {
+    color: var(--text-muted);
+}
+
+.dark .event-form-field label svg {
+    color: var(--text-light);
+}
+
+.dark .event-form-field input,
+.dark .event-form-field select,
+.dark .event-form-field textarea {
+    background: var(--bg-body);
+    border-color: var(--border);
+    color: var(--text-main);
+}
+
+.dark .event-form-field input::placeholder,
+.dark .event-form-field textarea::placeholder {
+    color: var(--text-light);
+}
+
+.dark .event-form-field input:hover,
+.dark .event-form-field select:hover,
+.dark .event-form-field textarea:hover {
+    border-color: var(--border-hover);
+}
+
+.dark .event-form-field input:focus,
+.dark .event-form-field select:focus,
+.dark .event-form-field textarea:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.dark .event-form-checkbox label {
+    color: var(--text-main);
+}
+
+.dark .event-form-checkbox .custom-checkbox {
+    background: var(--bg-body);
+    border-color: var(--border-hover);
+}
+
+/* Calendar Modal (alternate) Dark */
+.dark .modal-container,
+.dark .event-modal {
+    background: var(--bg-surface);
+}
+
+.dark .modal-header {
+    background: var(--bg-secondary);
+    border-color: var(--border);
+}
+
+.dark .modal-header h2 {
+    color: var(--text-main);
+}
+
+.dark .modal-close-btn {
+    color: var(--text-muted);
+}
+
+.dark .modal-close-btn:hover {
+    background: var(--border-hover);
+    color: var(--text-main);
+}
+
+.dark .form-group label {
+    color: var(--text-muted);
+}
+
+.dark .form-group label svg {
+    color: var(--text-light);
+}
+
+.dark .form-group input,
+.dark .form-group select,
+.dark .form-group textarea {
+    background: var(--bg-body);
+    border-color: var(--border);
+    color: var(--text-main);
+}
+
+.dark .form-group input::placeholder,
+.dark .form-group textarea::placeholder {
+    color: var(--text-light);
+}
+
+.dark .form-group input:focus,
+.dark .form-group select:focus,
+.dark .form-group textarea:focus {
+    background: var(--bg-secondary);
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.dark .checkbox-label {
+    color: var(--text-main);
+}
+
+.dark .checkbox-custom {
+    background: var(--bg-body);
+    border-color: var(--border-hover);
+}
+
+.dark .modal-actions {
+    background: var(--bg-secondary);
+    border-color: var(--border);
+}
+
+.dark .modal-actions .btn-secondary {
+    background: var(--bg-surface);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+.dark .modal-actions .btn-secondary:hover {
+    background: var(--bg-body);
+    color: var(--text-main);
+}
+
+/* Nav Buttons Dark */
+.dark .calendar-nav-button {
+    border-color: var(--border);
+}
+
+.dark .calendar-nav-today {
+    border-color: var(--border);
+}
+
+.dark .view-switcher {
+    border-color: var(--border);
+}
+
+.dark .view-switcher-btn {
+    border-color: var(--border);
+}
