@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import PropTypes from "prop-types";
-import { X, AlertCircle, User, Shield } from "../lib/icons";
+import { X, AlertCircle, User, Shield, Eye, EyeOff, RefreshCw, Copy, Check } from "../lib/icons";
 import Avatar from "./common/Avatar";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useForm } from "react-hook-form";
@@ -9,9 +9,28 @@ import * as z from "zod";
 
 const ROLES = ["Admin", "Manager", "Employee"];
 
+/**
+ * Generate a random, secure password
+ * Format: 3 uppercase + 3 lowercase + 3 digits + 3 special = 12 chars, shuffled
+ */
+function generatePassword() {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghjkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const special = "!@#$%&*";
+  const pick = (src, n) =>
+    Array.from({ length: n }, () => src[Math.floor(Math.random() * src.length)]).join("");
+  const raw = pick(upper, 3) + pick(lower, 3) + pick(digits, 3) + pick(special, 1);
+  return raw
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+}
+
 const employeeSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().min(1, "Email is required").email("Please enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.string().min(1, "Role is required"),
   department: z.string().min(1, "Department is required"),
   status: z.string().default("Active"),
@@ -20,17 +39,22 @@ const employeeSchema = z.object({
 });
 
 const AddEmployeeModal = ({ isOpen, onClose, onSubmit, isLoading = false }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   const {
     register,
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(employeeSchema),
     defaultValues: {
       name: "",
       email: "",
+      password: generatePassword(),
       role: "",
       department: "",
       gender: "other",
@@ -41,6 +65,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, isLoading = false }) => {
 
   const watchName = watch("name");
   const watchGender = watch("gender");
+  const watchPassword = watch("password");
 
   const departments = [
     "Engineering",
@@ -57,15 +82,49 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, isLoading = false }) => {
   const genders = [
     { value: "male", label: "Male" },
     { value: "female", label: "Female" },
-    { value: "other", label: "Prefer not to say" }
+    { value: "other", label: "Prefer not to say" },
   ];
+
+  const handleGeneratePassword = useCallback(() => {
+    setValue("password", generatePassword());
+    setCopied(false);
+  }, [setValue]);
+
+  const handleCopyPassword = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(watchPassword);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for non-HTTPS
+      const textarea = document.createElement("textarea");
+      textarea.value = watchPassword;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [watchPassword]);
 
   const submitForm = async (data) => {
     await onSubmit(data);
   };
 
   const handleClose = () => {
-    reset();
+    reset({
+      name: "",
+      email: "",
+      password: generatePassword(),
+      role: "",
+      department: "",
+      gender: "other",
+      status: "Active",
+      joinDate: new Date().toISOString().split("T")[0],
+    });
+    setCopied(false);
+    setShowPassword(false);
     onClose();
   };
 
@@ -154,10 +213,82 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, isLoading = false }) => {
                 )}
               </div>
 
+              {/* Password — full-width row */}
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                <label htmlFor="password" className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Shield size={13} style={{ color: "#6366f1" }} />
+                  Initial Password <span className="text-red-500">*</span>
+                </label>
+                <div style={{ position: "relative", display: "flex", gap: 6 }}>
+                  <div style={{ position: "relative", flex: 1 }}>
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      {...register("password")}
+                      className={`form-input ${errors.password ? "error" : ""}`}
+                      placeholder="Min 6 characters"
+                      disabled={isLoading}
+                      style={{ paddingRight: "2.5rem", fontFamily: showPassword ? "monospace" : undefined }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      style={{
+                        position: "absolute",
+                        right: 10,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        color: "var(--text-muted)",
+                        cursor: "pointer",
+                        padding: 2,
+                        display: "flex",
+                      }}
+                      title={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+
+                  {/* Generate */}
+                  <button
+                    type="button"
+                    onClick={handleGeneratePassword}
+                    className="btn btn-ghost btn-sm"
+                    title="Generate random password"
+                    disabled={isLoading}
+                    style={{ minWidth: 36, padding: "0 8px" }}
+                  >
+                    <RefreshCw size={15} />
+                  </button>
+
+                  {/* Copy */}
+                  <button
+                    type="button"
+                    onClick={handleCopyPassword}
+                    className="btn btn-ghost btn-sm"
+                    title={copied ? "Copied!" : "Copy password"}
+                    disabled={isLoading}
+                    style={{ minWidth: 36, padding: "0 8px", color: copied ? "var(--success-color)" : undefined }}
+                  >
+                    {copied ? <Check size={15} /> : <Copy size={15} />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="form-error">
+                    <AlertCircle size={12} /> {errors.password.message}
+                  </p>
+                )}
+                <p className="form-hint" style={{ fontSize: "0.75rem", color: "var(--text-light)", marginTop: 4 }}>
+                  Share this password with the employee. They can change it after first login.
+                </p>
+              </div>
+
               {/* Role */}
               <div className="form-group">
-                <label htmlFor="role" className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Shield size={13} style={{ color: '#6366f1' }} />
+                <label htmlFor="role" className="form-label" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Shield size={13} style={{ color: "#6366f1" }} />
                   Role <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -165,7 +296,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, isLoading = false }) => {
                   {...register("role")}
                   className={`form-select ${errors.role ? "error" : ""}`}
                   disabled={isLoading}
-                  style={{ borderColor: 'rgba(99,102,241,0.4)', boxShadow: '0 0 0 1px rgba(99,102,241,0.15)' }}
+                  style={{ borderColor: "rgba(99,102,241,0.4)", boxShadow: "0 0 0 1px rgba(99,102,241,0.15)" }}
                 >
                   <option value="">Select role</option>
                   {ROLES.map((r) => (

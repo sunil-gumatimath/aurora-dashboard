@@ -93,6 +93,7 @@ export { HiOutlineDocumentText as FileText } from "react-icons/hi2";
 export { HiOutlineFolderOpen as Folder } from "react-icons/hi2";
 export { HiOutlineCloudArrowUp as Upload } from "react-icons/hi2";
 export { HiOutlineClipboardDocumentList as ClipboardList } from "react-icons/hi2";
+export { HiOutlineClipboard as Copy } from "react-icons/hi2";
 export { HiOutlinePrinter as Printer } from "react-icons/hi2";
 
 // ─── SECURITY / SHIELD ───────────────────────────────────────────
@@ -162,3 +163,4 @@ export { HiOutlineArrowPath as Repeat } from "react-icons/hi2";
 
 // ─── TYPE ────────────────────────────────────────────────────────
 export { HiOutlinePencil as Type } from "react-icons/hi2";
+

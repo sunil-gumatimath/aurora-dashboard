@@ -11,6 +11,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { employeeService } from "../../services/employeeService";
 import NotificationPanel from "../NotificationPanel";
+import Avatar from "../common/Avatar";
 import PropTypes from "prop-types";
 import { useUIStore } from "../../store/uiStore";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -131,10 +132,7 @@ const Header = () => {
     return "User";
   };
 
-  // Generate avatar seed from user email or id
-  const getAvatarSeed = () => {
-    return user?.email || user?.id || "default";
-  };
+
 
   return (
     <header className="app-header">
@@ -229,9 +227,11 @@ const Header = () => {
                 <p className="text-sm font-medium text-main">{getUserName()}</p>
                 <p className="text-xs text-muted">{user?.email}</p>
               </div>
-              <img
-                src={`https://api.dicebear.com/9.x/micah/svg?seed=${getAvatarSeed()}`}
-                alt={getUserName()}
+              <Avatar
+                src={user?.avatar}
+                name={user?.name || getUserName()}
+                gender={user?.gender}
+                size="sm"
                 className="user-avatar"
               />
             </button>
@@ -240,8 +240,8 @@ const Header = () => {
           <DropdownMenu.Portal>
             <DropdownMenu.Content
               className={`dropdown-content w-[240px] overflow-hidden rounded-2xl shadow-xl border p-3 space-y-1.5 z-50 animate-in fade-in zoom-in-95 ${effectiveTheme === "dark"
-                  ? "bg-[#131a28] border-[#1e293b]"
-                  : "bg-white border-gray-200"
+                ? "bg-[#131a28] border-[#1e293b]"
+                : "bg-white border-gray-200"
                 }`}
               style={{ borderRadius: '20px', padding: '12px', width: '240px' }}
               sideOffset={8}

@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import PropTypes from "prop-types";
-import { User, Camera, Mail, Smartphone, AlertCircle } from "../../../lib/icons";
+import { User, Camera, Mail, Smartphone, AlertCircle, Trash2, Loader2 } from "../../../lib/icons";
+import Avatar from "../../../components/common/Avatar";
+import { avatarService } from "../../../services/avatarService";
 
 /**
  * Account Section Component
@@ -13,6 +15,38 @@ const AccountSection = ({
     isSaving,
     onUpdateSetting
 }) => {
+    const fileInputRef = useRef(null);
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file || !user?.employeeId) return;
+        setIsUploading(true);
+        try {
+            const { url, error } = await avatarService.upload(user.employeeId, file);
+            if (error) throw error;
+            onUpdateSetting("avatarUrl", url);
+        } catch (err) {
+            console.error("Avatar upload failed:", err);
+        } finally {
+            setIsUploading(false);
+            e.target.value = "";
+        }
+    };
+
+    const handleAvatarRemove = async () => {
+        if (!user?.employeeId) return;
+        setIsUploading(true);
+        try {
+            const { error } = await avatarService.remove(user.employeeId);
+            if (error) throw error;
+            onUpdateSetting("avatarUrl", null);
+        } catch (err) {
+            console.error("Avatar remove failed:", err);
+        } finally {
+            setIsUploading(false);
+        }
+    };
     return (
         <div className="settings-panel">
             <div className="settings-panel-header">
@@ -29,13 +63,27 @@ const AccountSection = ({
                 {/* Avatar Section */}
                 <div className="settings-avatar-section">
                     <div className="settings-avatar-container">
-                        <img
-                            src={settings.avatarUrl || `https://api.dicebear.com/9.x/initials/svg?seed=${settings.firstName} ${settings.lastName}`}
-                            alt="Profile"
+                        <Avatar
+                            src={settings.avatarUrl}
+                            name={`${settings.firstName} ${settings.lastName}`}
+                            gender={user?.gender}
+                            size="xl"
                             className="settings-avatar-large"
                         />
-                        <button className="settings-avatar-edit" disabled>
-                            <Camera size={16} />
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            style={{ display: 'none' }}
+                            onChange={handleAvatarUpload}
+                        />
+                        <button
+                            className="settings-avatar-edit"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                            title="Upload photo"
+                        >
+                            {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
                         </button>
                     </div>
                     <div className="settings-avatar-info">

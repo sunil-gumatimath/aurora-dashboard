@@ -7,21 +7,26 @@ const TABLE_NAME = "support_tickets";
  */
 export const supportService = {
     /**
-     * Get all support tickets with optional filters
+     * Get all support tickets with optional filters (paginated)
      * @param {Object} options - Query options
-     * @returns {Promise<{data: Array, error: Error|null}>}
+     * @param {number} [options.page=1] - 1-indexed page
+     * @param {number} [options.pageSize=20] - rows per page
+     * @returns {Promise<{data: Array, count: number, error: Error|null}>}
      */
-    async getAll({ userId = null, status = null, priority = null, limit = 50 } = {}) {
+    async getAll({ page = 1, pageSize = 20, userId = null, status = null, priority = null } = {}) {
         try {
+            const from = (page - 1) * pageSize;
+            const to = from + pageSize - 1;
+
             let query = supabase
                 .from(TABLE_NAME)
                 .select(`
                     *,
                     creator:employees!support_tickets_created_by_fkey(id, name, email, avatar, department),
                     assignee:employees!support_tickets_assigned_to_fkey(id, name, email, avatar)
-                `)
+                `, { count: "exact" })
                 .order("created_at", { ascending: false })
-                .limit(limit);
+                .range(from, to);
 
             // Filter by creator if provided
             if (userId) {
@@ -38,13 +43,13 @@ export const supportService = {
                 query = query.eq("priority", priority);
             }
 
-            const { data, error } = await query;
+            const { data, count, error } = await query;
 
             if (error) throw error;
-            return { data: data || [], error: null };
+            return { data: data || [], count: count ?? 0, error: null };
         } catch (error) {
             console.error("Error fetching support tickets:", error);
-            return { data: [], error };
+            return { data: [], count: 0, error };
         }
     },
 

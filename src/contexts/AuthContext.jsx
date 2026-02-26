@@ -26,9 +26,8 @@ export const AuthProvider = ({ children }) => {
         console.error("Error fetching employee profile:", error);
       }
 
-      // Merge auth user with employee data
-      // Fallback for admin if not in employees table
-      const role = employee?.role || (authUser.email === 'admin@gmail.com' ? 'Admin' : 'Employee');
+      // Role comes strictly from the employee table — no hardcoded fallbacks
+      const role = employee?.role || 'Employee';
 
       setUser({
         ...authUser,

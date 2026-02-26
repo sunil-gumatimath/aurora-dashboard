@@ -7,21 +7,26 @@ const TABLE_NAME = "calendar_events";
  */
 export const calendarService = {
     /**
-     * Get all calendar events with optional filters
+     * Get all calendar events with optional filters (paginated)
      * @param {Object} options - Query options
-     * @returns {Promise<{data: Array, error: Error|null}>}
+     * @param {number} [options.page=1] - 1-indexed page
+     * @param {number} [options.pageSize=20] - rows per page
+     * @returns {Promise<{data: Array, count: number, error: Error|null}>}
      */
-    async getAll({ startDate = null, endDate = null, type = null, employeeId = null, limit = 100 } = {}) {
+    async getAll({ page = 1, pageSize = 20, startDate = null, endDate = null, type = null, employeeId = null } = {}) {
         try {
+            const from = (page - 1) * pageSize;
+            const to = from + pageSize - 1;
+
             let query = supabase
                 .from(TABLE_NAME)
                 .select(`
                     *,
                     employee:employees!calendar_events_employee_id_fkey(id, name, email, avatar, department),
                     creator:employees!calendar_events_created_by_fkey(id, name, email, avatar)
-                `)
+                `, { count: "exact" })
                 .order("date", { ascending: true })
-                .limit(limit);
+                .range(from, to);
 
             // Filter by date range
             if (startDate) {
@@ -41,13 +46,13 @@ export const calendarService = {
                 query = query.eq("employee_id", employeeId);
             }
 
-            const { data, error } = await query;
+            const { data, count, error } = await query;
 
             if (error) throw error;
-            return { data: data || [], error: null };
+            return { data: data || [], count: count ?? 0, error: null };
         } catch (error) {
             console.error("Error fetching calendar events:", error);
-            return { data: [], error };
+            return { data: [], count: 0, error };
         }
     },
 

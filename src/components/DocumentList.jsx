@@ -127,7 +127,7 @@ const DocumentList = ({
                       <div className="flex items-center gap-1.5">
                         <Calendar size={12} className="text-light" />
                         <span>
-                          {formatDistanceToNow(new Date(document.uploaded_at), {
+                          {formatDistanceToNow(new Date(document.created_at || document.uploaded_at), {
                             addSuffix: true,
                           })}
                         </span>

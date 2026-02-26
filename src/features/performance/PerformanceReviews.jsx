@@ -7,6 +7,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { performanceService } from "../../services/performanceService";
+import Avatar from "../../components/common/Avatar";
 import "./performance-reviews.css";
 
 const statusConfig = {
@@ -146,7 +147,7 @@ const PerformanceReviews = () => {
                                 {filteredReviews.map(r => (
                                     <div key={r.id} className="perf-review-card" onClick={() => setSelectedReview(r)}>
                                         <div className="perf-review-left">
-                                            <img src={r.employee?.avatar || `https://api.dicebear.com/9.x/initials/svg?seed=${r.employee?.name}`} alt="" />
+                                            <Avatar src={r.employee?.avatar} name={r.employee?.name || 'Unknown'} size="sm" />
                                             <div><span className="perf-review-name">{r.employee?.name}</span><span><Calendar size={14} />{r.period}</span></div>
                                         </div>
                                         <div className="perf-review-middle">{r.overall_rating ? renderRating(r.overall_rating) : <span className="perf-no-rating">Not rated</span>}</div>

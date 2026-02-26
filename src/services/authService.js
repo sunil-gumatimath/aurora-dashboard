@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 
 /**
  * Authentication Service - Handles user authentication with Supabase
@@ -142,6 +143,45 @@ export const authService = {
     });
 
     return data;
+  },
+
+  // ─── Admin User Creation ────────────────────────────────────
+
+  /**
+   * Create a new auth user (called by admin when adding an employee).
+   * Uses a separate Supabase client so the admin's own session is NOT
+   * replaced by the newly created user's session.
+   *
+   * @param {string} email    - New user's email
+   * @param {string} password - Initial password
+   * @param {Object} metadata - Optional user_metadata (name, role, etc.)
+   * @returns {Promise<{userId: string|null, error: Error|null}>}
+   */
+  async adminCreateUser(email, password, metadata = {}) {
+    try {
+      // Create a disposable client so signUp doesn't overwrite the admin session
+      const tempClient = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        { auth: { persistSession: false, autoRefreshToken: false } },
+      );
+
+      const { data, error } = await tempClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata,
+          // skip email confirmation so the employee can log in immediately
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
+      });
+
+      if (error) throw error;
+      return { userId: data.user?.id ?? null, error: null };
+    } catch (error) {
+      console.error("Admin create user error:", error);
+      return { userId: null, error };
+    }
   },
 
   // ─── MFA (Multi-Factor Authentication) ───────────────────────

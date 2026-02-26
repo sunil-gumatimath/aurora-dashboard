@@ -7,17 +7,25 @@ const TABLE_NAME = "tasks";
  */
 export const taskService = {
     /**
-     * Get all tasks with assignee info
+     * Get all tasks with assignee info (paginated)
+     * @param {Object} options - Filters and pagination
+     * @param {number} [options.page=1] - 1-indexed page
+     * @param {number} [options.pageSize=20] - rows per page
+     * @returns {Promise<{data: Array, count: number, error: Error|null}>}
      */
-    async getAll(filters = {}) {
+    async getAll({ page = 1, pageSize = 20, ...filters } = {}) {
         try {
+            const from = (page - 1) * pageSize;
+            const to = from + pageSize - 1;
+
             let query = supabase
                 .from(TABLE_NAME)
                 .select(`
           *,
           assignee:employees(id, name, email, avatar, department)
-        `)
-                .order("created_at", { ascending: false });
+        `, { count: "exact" })
+                .order("created_at", { ascending: false })
+                .range(from, to);
 
             // Apply filters
             if (filters.status && filters.status !== "all") {
@@ -30,13 +38,13 @@ export const taskService = {
                 query = query.eq("assignee_id", filters.assignee_id);
             }
 
-            const { data, error } = await query;
+            const { data, count, error } = await query;
 
             if (error) throw error;
-            return { data: data || [], error: null };
+            return { data: data || [], count: count ?? 0, error: null };
         } catch (error) {
             console.error("Error fetching tasks:", error);
-            return { data: [], error };
+            return { data: [], count: 0, error };
         }
     },
 

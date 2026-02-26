@@ -21,6 +21,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { chatService } from "../../services/chatService";
+import Avatar from "../../components/common/Avatar";
 import { format, isToday, isYesterday } from "date-fns";
 import "./team-chat.css";
 
@@ -228,14 +229,11 @@ const TeamChat = () => {
         return otherParticipant?.name || "Unknown";
     };
 
-    // Get conversation avatar
+    // Get conversation avatar URL (returns null if none — Avatar component handles fallback)
     const getConversationAvatar = (conv) => {
-        if (conv.is_group) {
-            return `https://api.dicebear.com/9.x/shapes/svg?seed=${conv.name}`;
-        }
+        if (conv.is_group) return null;
         const otherParticipant = conv.participants?.find(p => p.user_id !== employeeId);
-        return otherParticipant?.avatar ||
-            `https://api.dicebear.com/9.x/initials/svg?seed=${otherParticipant?.name || 'U'}`;
+        return otherParticipant?.avatar || null;
     };
 
     // Check if user is online
@@ -253,7 +251,11 @@ const TeamChat = () => {
                 onClick={() => handleSelectConversation(conv)}
             >
                 <div className="chat-conversation-avatar">
-                    <img src={getConversationAvatar(conv)} alt="" />
+                    <Avatar
+                        src={getConversationAvatar(conv)}
+                        name={getConversationName(conv)}
+                        size="sm"
+                    />
                     {!conv.is_group && isUserOnline(conv.participants?.[0]?.user_id) && (
                         <span className="online-indicator" />
                     )}
@@ -297,9 +299,10 @@ const TeamChat = () => {
                 )}
                 <div className="chat-message-wrapper">
                     {!isOwn && showAvatar && (
-                        <img
-                            src={msg.sender?.avatar || `https://api.dicebear.com/9.x/initials/svg?seed=${msg.sender?.name || 'U'}`}
-                            alt=""
+                        <Avatar
+                            src={msg.sender?.avatar}
+                            name={msg.sender?.name || 'U'}
+                            size="xs"
                             className="chat-message-avatar"
                         />
                     )}
@@ -402,9 +405,10 @@ const TeamChat = () => {
                                 <ChevronLeft size={24} />
                             </button>
                             <div className="chat-contact-info">
-                                <img
+                                <Avatar
                                     src={getConversationAvatar(activeConversation)}
-                                    alt=""
+                                    name={getConversationName(activeConversation)}
+                                    size="sm"
                                     className="chat-contact-avatar"
                                 />
                                 <div className="chat-contact-details">
@@ -709,9 +713,10 @@ const NewChatModal = ({ onClose, onCreateConversation, currentEmployeeId }) => {
                                         className={`chat-user-item ${isSelected ? "selected" : ""}`}
                                         onClick={() => toggleUserSelection(emp)}
                                     >
-                                        <img
-                                            src={emp.avatar || `https://api.dicebear.com/9.x/initials/svg?seed=${emp.name}`}
-                                            alt=""
+                                        <Avatar
+                                            src={emp.avatar}
+                                            name={emp.name}
+                                            size="sm"
                                         />
                                         <div className="chat-user-info">
                                             <span className="chat-user-name">{emp.name}</span>

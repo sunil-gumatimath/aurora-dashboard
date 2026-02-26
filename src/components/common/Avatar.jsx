@@ -1,17 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { getInitials, getAvatarStyle } from '../../utils/avatarUtils.js';
 
 /**
- * Avatar Component - Displays user avatar with initials and gender-based colors
+ * Avatar Component — Displays user avatar
+ *
+ * Priority: src (uploaded photo) → initials fallback
  */
 const Avatar = ({
-    name,
+    src,
+    name = '',
     gender = 'other',
     size = 'md',
     className = '',
     onClick
 }) => {
+    const [imgError, setImgError] = useState(false);
     const initials = getInitials(name);
     const style = getAvatarStyle(gender);
 
@@ -23,9 +27,37 @@ const Avatar = ({
         xl: 'avatar-xl'
     };
 
+    const sizeClass = sizeClasses[size] || sizeClasses.md;
+
+    // Show uploaded photo if available and not errored
+    if (src && !imgError) {
+        return (
+            <div
+                className={`avatar ${sizeClass} ${className}`}
+                onClick={onClick}
+                title={name}
+                style={{ padding: 0, overflow: 'hidden' }}
+            >
+                <img
+                    src={src}
+                    alt={name}
+                    onError={() => setImgError(true)}
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        borderRadius: 'inherit',
+                        display: 'block',
+                    }}
+                />
+            </div>
+        );
+    }
+
+    // Fallback to initials
     return (
         <div
-            className={`avatar ${sizeClasses[size] || sizeClasses.md} ${className}`}
+            className={`avatar ${sizeClass} ${className}`}
             style={style}
             onClick={onClick}
             title={name}
@@ -36,7 +68,8 @@ const Avatar = ({
 };
 
 Avatar.propTypes = {
-    name: PropTypes.string.isRequired,
+    src: PropTypes.string,
+    name: PropTypes.string,
     gender: PropTypes.oneOf(['male', 'female', 'other']),
     size: PropTypes.oneOf(['xs', 'sm', 'md', 'lg', 'xl']),
     className: PropTypes.string,

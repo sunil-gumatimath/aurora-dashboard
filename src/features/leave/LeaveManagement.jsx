@@ -20,6 +20,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { SkeletonLeaveCard, SkeletonStatCard, SkeletonTable, Skeleton } from "../../components/common/Skeleton";
 import Toast from "../../components/common/Toast";
 import ApplyLeaveModal from "./ApplyLeaveModal";
+import Avatar from "../../components/common/Avatar";
 import "./leave-styles.css";
 
 const LeaveManagement = () => {
@@ -393,9 +394,10 @@ const LeaveManagement = () => {
                                         {(activeTab !== "my-leaves" || isManager) && (
                                             <td>
                                                 <div className="leave-employee">
-                                                    <img
-                                                        src={request.employee?.avatar || `https://api.dicebear.com/9.x/micah/svg?seed=${request.employee?.name}`}
-                                                        alt={request.employee?.name}
+                                                    <Avatar
+                                                        src={request.employee?.avatar}
+                                                        name={request.employee?.name || 'Unknown'}
+                                                        size="sm"
                                                     />
                                                     <div>
                                                         <span className="name">{request.employee?.name}</span>

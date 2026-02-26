@@ -15,6 +15,7 @@ import { employeeService } from "../../services/employeeService";
 import { supabase } from "../../lib/supabase";
 import Toast from "../../components/common/Toast";
 import EmployeeCard from "../../components/EmployeeCard";
+import Pagination from "../../components/common/Pagination";
 import { SkeletonEmployeeCard, SkeletonFilterBar, Skeleton } from "../../components/common/Skeleton";
 import FilterPanel from "../../components/FilterPanel";
 import SortControls from "../../components/SortControls";
@@ -30,6 +31,8 @@ const EditEmployeeModal = lazy(
 );
 const ConfirmModal = lazy(() => import("../../components/ui/ConfirmModal"));
 
+const DEFAULT_PAGE_SIZE = 20;
+
 const EmployeeList = () => {
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState("cards"); // "cards" | "byRole"
@@ -37,16 +40,79 @@ const EmployeeList = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  const { data: employees = [], isLoading, isFetching, isError } = useQuery({
-    queryKey: ['employees'],
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+
+  // Filter and sort states
+  const [filters, setFilters] = useState({
+    department: "",
+    role: "",
+    status: "",
+  });
+  const [sortBy, setSortBy] = useState("join_date");
+  const [sortOrder, setSortOrder] = useState("desc");
+
+  // Debounce search term to reduce re-renders
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPage(1); // reset to page 1 on new search
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when filters or sort change
+  useEffect(() => {
+    setPage(1);
+  }, [filters, sortBy, sortOrder]);
+
+  // ─── Server-Side Paginated Query ──────────────────────
+  const queryParams = useMemo(
+    () => ({
+      page,
+      pageSize,
+      search: debouncedSearchTerm,
+      department: filters.department,
+      role: filters.role,
+      status: filters.status,
+      sortBy,
+      sortOrder,
+    }),
+    [page, pageSize, debouncedSearchTerm, filters, sortBy, sortOrder],
+  );
+
+  const {
+    data: queryResult = { data: [], count: 0 },
+    isLoading,
+    isFetching,
+    isError,
+  } = useQuery({
+    queryKey: ["employees", queryParams],
     queryFn: async () => {
-      const { data, error } = await employeeService.getAll();
-      if (error) throw error;
-      return data || [];
-    }
+      const result = await employeeService.getAll(queryParams);
+      if (result.error) throw result.error;
+      return { data: result.data || [], count: result.count ?? 0 };
+    },
+    keepPreviousData: true, // keep stale data visible while loading next page
   });
 
+  const employees = queryResult.data;
+  const totalCount = queryResult.count;
   const isRefreshing = isFetching && !isLoading;
+
+  // We also need a lightweight "all employees" list for the FilterPanel dropdown
+  // options (department/role/status lists). This is a separate, un-paginated count-only
+  // call, but we can simply use the totalCount + the available options from the
+  // current page. For simplicity we'll fetch all employees once for filter options.
+  const { data: allEmployees = [] } = useQuery({
+    queryKey: ["employees-options"],
+    queryFn: async () => {
+      const { data } = await employeeService.getAll({ page: 1, pageSize: 1000 });
+      return data || [];
+    },
+    staleTime: 60_000, // revalidate every minute
+  });
 
   // Toast state
   const [toast, setToast] = useState(null);
@@ -75,46 +141,26 @@ const EmployeeList = () => {
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState(new Set());
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
-  // Filter and sort states
-  const [filters, setFilters] = useState({
-    department: "",
-    role: "",
-    status: "",
-  });
-  const [sortBy, setSortBy] = useState("join_date");
-  const [sortOrder, setSortOrder] = useState("desc");
-
-  // Debounce search term to reduce re-renders
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300); // 300ms debounce
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
   // Refactored to trigger React Query invalidation
   const fetchEmployees = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['employees'] });
+    queryClient.invalidateQueries({ queryKey: ["employees"] });
+    queryClient.invalidateQueries({ queryKey: ["employees-options"] });
   }, [queryClient]);
 
   // Supabase Realtime subscription for live updates
   useEffect(() => {
-    // Create a channel for real-time updates
     const channel = supabase
       .channel("employees-realtime")
       .on(
         "postgres_changes",
         {
-          event: "*", // Listen to all events (INSERT, UPDATE, DELETE)
+          event: "*",
           schema: "public",
           table: "employees",
         },
         (payload) => {
-          // Refresh the employee list when any change occurs
-          fetchEmployees(true); // Use refresh mode to show subtle loading
+          fetchEmployees();
 
-          // Show a toast notification about the change
           if (payload.eventType === "INSERT") {
             setToast({
               type: "info",
@@ -135,71 +181,12 @@ const EmployeeList = () => {
       )
       .subscribe();
 
-    // Cleanup subscription on unmount
     return () => {
       supabase.removeChannel(channel);
     };
   }, [fetchEmployees]);
 
-  // Search, filter, and sort employees with debounced search term
-  const filteredAndSortedEmployees = useMemo(() => {
-    let result = [...employees];
-
-    // Apply search filter
-    if (debouncedSearchTerm) {
-      const term = debouncedSearchTerm.toLowerCase();
-      result = result.filter(
-        (emp) =>
-          emp.name.toLowerCase().includes(term) ||
-          emp.role.toLowerCase().includes(term) ||
-          emp.department.toLowerCase().includes(term) ||
-          emp.email.toLowerCase().includes(term),
-      );
-    }
-
-    // Apply department filter
-    if (filters.department) {
-      result = result.filter((emp) => emp.department === filters.department);
-    }
-
-    // Apply role filter
-    if (filters.role) {
-      result = result.filter((emp) => emp.role === filters.role);
-    }
-
-    // Apply status filter
-    if (filters.status) {
-      result = result.filter((emp) => emp.status === filters.status);
-    }
-
-    // Apply sorting
-    result.sort((a, b) => {
-      let aValue = a[sortBy];
-      let bValue = b[sortBy];
-
-      // Handle date sorting
-      if (sortBy === "join_date") {
-        aValue = new Date(aValue);
-        bValue = new Date(bValue);
-      }
-
-      // Handle string sorting
-      if (typeof aValue === "string") {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (sortOrder === "asc") {
-        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-      } else {
-        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-      }
-    });
-
-    return result;
-  }, [debouncedSearchTerm, employees, filters, sortBy, sortOrder]);
-
-  // Add employee - memoized to prevent re-creation
+  // Add employee
   const handleAddEmployee = useCallback(
     async (employeeData) => {
       setActionLoading(true);
@@ -217,7 +204,7 @@ const EmployeeList = () => {
           message: `${data.name} has been added successfully!`,
         });
         setShowAddModal(false);
-        fetchEmployees(true);
+        fetchEmployees();
       }
 
       setActionLoading(false);
@@ -225,7 +212,7 @@ const EmployeeList = () => {
     [fetchEmployees],
   );
 
-  // Edit employee - memoized
+  // Edit employee
   const handleEditEmployee = useCallback(
     async (id, updates) => {
       setActionLoading(true);
@@ -245,7 +232,7 @@ const EmployeeList = () => {
         });
         setShowEditModal(false);
         setSelectedEmployee(null);
-        fetchEmployees(true);
+        fetchEmployees();
       }
 
       setActionLoading(false);
@@ -253,7 +240,7 @@ const EmployeeList = () => {
     [fetchEmployees],
   );
 
-  // Delete employee - memoized
+  // Delete employee
   const handleDeleteEmployee = useCallback(async () => {
     if (!selectedEmployee) return;
 
@@ -274,19 +261,17 @@ const EmployeeList = () => {
       });
       setShowDeleteModal(false);
       setSelectedEmployee(null);
-      fetchEmployees(true);
+      fetchEmployees();
     }
 
     setActionLoading(false);
   }, [selectedEmployee, fetchEmployees]);
 
-  // Open edit modal - memoized to prevent re-creation
   const openEditModal = useCallback((employee) => {
     setSelectedEmployee(employee);
     setShowEditModal(true);
   }, []);
 
-  // Open delete confirmation - memoized
   const openDeleteModal = useCallback((employee) => {
     setSelectedEmployee(employee);
     setShowDeleteModal(true);
@@ -305,18 +290,15 @@ const EmployeeList = () => {
     });
   }, []);
 
-  // Select all filtered employees
   const handleSelectAll = useCallback(() => {
-    const allIds = new Set(filteredAndSortedEmployees.map((emp) => emp.id));
+    const allIds = new Set(employees.map((emp) => emp.id));
     setSelectedEmployeeIds(allIds);
-  }, [filteredAndSortedEmployees]);
+  }, [employees]);
 
-  // Clear selection
   const handleClearSelection = useCallback(() => {
     setSelectedEmployeeIds(new Set());
   }, []);
 
-  // Bulk delete
   const handleBulkDelete = useCallback(() => {
     setShowBulkDeleteModal(true);
   }, []);
@@ -351,7 +333,6 @@ const EmployeeList = () => {
     setActionLoading(false);
   }, [selectedEmployeeIds, employees, fetchEmployees]);
 
-  // Bulk status update
   const handleBulkStatusChange = useCallback(
     async (newStatus) => {
       setActionLoading(true);
@@ -384,33 +365,63 @@ const EmployeeList = () => {
     [selectedEmployeeIds, employees, fetchEmployees],
   );
 
-  // Handle filter changes
   const handleFilterChange = useCallback((newFilters) => {
     setFilters(newFilters);
-    setSelectedEmployeeIds(new Set()); // Clear selection when filters change
+    setSelectedEmployeeIds(new Set());
   }, []);
 
-  // Handle sort changes
   const handleSortChange = useCallback((field, order) => {
     setSortBy(field);
     setSortOrder(order);
   }, []);
 
+  // CSV export uses current page data
+  const handleExportCSV = useCallback(() => {
+    const headers = [
+      "ID",
+      "Name",
+      "Email",
+      "Role",
+      "Department",
+      "Status",
+      "Join Date",
+    ];
+    const csvContent = [
+      headers.join(","),
+      ...employees.map((emp) =>
+        [
+          emp.id,
+          `"${emp.name}"`,
+          emp.email,
+          emp.role,
+          emp.department,
+          emp.status,
+          emp.join_date,
+        ].join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `employees_export_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }, [employees]);
+
   if (isLoading) {
     return (
       <div className="employees-container">
-        {/* Header Skeleton */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <Skeleton width="200px" height="32px" />
             <Skeleton width="180px" height="14px" className="mt-2" />
           </div>
         </div>
-
-        {/* Search & Actions Skeleton */}
         <SkeletonFilterBar hasSearch={true} filterCount={2} />
-
-        {/* Grid Skeleton */}
         <div className="employees-grid skeleton-stagger">
           {Array.from({ length: 8 }).map((_, index) => (
             <SkeletonEmployeeCard key={index} />
@@ -460,7 +471,7 @@ const EmployeeList = () => {
       {/* Card View */}
       {viewMode === "cards" && (
         <>
-          {/* Bulk Action Toolbar - appears when items selected */}
+          {/* Bulk Action Toolbar */}
           <BulkActionToolbar
             selectedCount={selectedEmployeeIds.size}
             onClearSelection={handleClearSelection}
@@ -489,45 +500,10 @@ const EmployeeList = () => {
               )}
             </div>
             <div className="flex gap-2">
-              {/* CSV Actions */}
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={() => {
-                  const headers = [
-                    "ID",
-                    "Name",
-                    "Email",
-                    "Role",
-                    "Department",
-                    "Status",
-                    "Join Date",
-                  ];
-                  const csvContent = [
-                    headers.join(","),
-                    ...filteredAndSortedEmployees.map((emp) =>
-                      [
-                        emp.id,
-                        `"${emp.name}"`,
-                        emp.email,
-                        emp.role,
-                        emp.department,
-                        emp.status,
-                        emp.join_date,
-                      ].join(","),
-                    ),
-                  ].join("\n");
-
-                  const blob = new Blob([csvContent], { type: "text/csv" });
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `employees_export_${new Date().toISOString().split("T")[0]}.csv`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  window.URL.revokeObjectURL(url);
-                }}
+                onClick={handleExportCSV}
                 title="Export to CSV"
               >
                 <Download size={18} />
@@ -536,7 +512,7 @@ const EmployeeList = () => {
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={() => fetchEmployees(true)}
+                onClick={() => fetchEmployees()}
                 disabled={isRefreshing}
                 title="Refresh employee list"
               >
@@ -559,7 +535,7 @@ const EmployeeList = () => {
           {/* Filter and Sort Controls */}
           <div className="employees-controls">
             <FilterPanel
-              employees={employees}
+              employees={allEmployees}
               filters={filters}
               onFilterChange={handleFilterChange}
             />
@@ -571,19 +547,24 @@ const EmployeeList = () => {
           </div>
 
           {/* Results Count & Select All */}
-          {employees.length > 0 && (
+          {totalCount > 0 && (
             <div className="employees-results">
               <p>
-                Showing <strong>{filteredAndSortedEmployees.length}</strong> of{" "}
-                <strong>{employees.length}</strong> employees
+                Showing <strong>{employees.length}</strong> of{" "}
+                <strong>{totalCount}</strong> employees
+                {isRefreshing && (
+                  <span style={{ marginLeft: 8, opacity: 0.6, fontSize: "0.75rem" }}>
+                    updating…
+                  </span>
+                )}
               </p>
-              {filteredAndSortedEmployees.length > 0 && (
+              {employees.length > 0 && (
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
                   onClick={handleSelectAll}
                 >
-                  {selectedEmployeeIds.size === filteredAndSortedEmployees.length
+                  {selectedEmployeeIds.size === employees.length
                     ? "Deselect All"
                     : "Select All"}
                 </button>
@@ -591,14 +572,25 @@ const EmployeeList = () => {
             </div>
           )}
 
-          {filteredAndSortedEmployees.length > 0 ? (
-            <VirtualizedEmployeeGrid
-              employees={filteredAndSortedEmployees}
-              selectedEmployeeIds={selectedEmployeeIds}
-              onEdit={openEditModal}
-              onDelete={openDeleteModal}
-              onToggleSelect={handleToggleSelect}
-            />
+          {employees.length > 0 ? (
+            <>
+              <VirtualizedEmployeeGrid
+                employees={employees}
+                selectedEmployeeIds={selectedEmployeeIds}
+                onEdit={openEditModal}
+                onDelete={openDeleteModal}
+                onToggleSelect={handleToggleSelect}
+              />
+
+              {/* Server-side Pagination */}
+              <Pagination
+                currentPage={page}
+                totalCount={totalCount}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            </>
           ) : (
             <div className="card employees-empty">
               <Users size={64} className="employees-empty-icon" />
@@ -687,15 +679,14 @@ const EmployeeList = () => {
  * for large datasets (>50). For small lists, renders normally.
  */
 const VIRTUAL_THRESHOLD = 50;
-const ROW_HEIGHT = 260; // Approximate height of an employee card row
-const COLUMNS = 3; // Number of columns in the grid (matches CSS)
+const ROW_HEIGHT = 260;
+const COLUMNS = 3;
 
 const VirtualizedEmployeeGrid = React.memo(
   ({ employees, selectedEmployeeIds, onEdit, onDelete, onToggleSelect }) => {
     const parentRef = useRef(null);
     const useVirtual = employees.length > VIRTUAL_THRESHOLD;
 
-    // Group employees into rows of COLUMNS
     const rows = useMemo(() => {
       if (!useVirtual) return [];
       const result = [];
@@ -712,7 +703,6 @@ const VirtualizedEmployeeGrid = React.memo(
       overscan: 3,
     });
 
-    // Simple rendering for small lists
     if (!useVirtual) {
       return (
         <div className="employees-grid">
@@ -730,7 +720,6 @@ const VirtualizedEmployeeGrid = React.memo(
       );
     }
 
-    // Virtual rendering for large lists
     return (
       <div
         ref={parentRef}

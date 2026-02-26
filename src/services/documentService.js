@@ -14,7 +14,7 @@ export const documentService = {
         .from("employee_documents")
         .select("*")
         .eq("employee_id", employeeId)
-        .order("uploaded_at", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
