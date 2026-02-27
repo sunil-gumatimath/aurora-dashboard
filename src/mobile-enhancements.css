@@ -801,13 +801,20 @@
   /* Touch device specific styles */
 
   /* Add active states for better feedback */
-  button:active,
-  .btn:active,
   .nav-item:active,
   .employee-card:active,
   .task-card:active {
     transform: scale(0.98);
     opacity: 0.9;
+  }
+
+  /* Keep button interactions stable to avoid jumpy/squishy press animations */
+  button:active,
+  .btn:active,
+  .employee-action-btn:active,
+  .emp-detail__btn:active {
+    transform: none;
+    opacity: 1;
   }
 
   /* Larger hit areas for links */
