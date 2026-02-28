@@ -53,10 +53,9 @@ supabase/.cache
 *.sql.gz
 *.dump
 
-# Backend SQL snapshots/scripts (keep Supabase migrations versioned)
+# Backend SQL snapshots/scripts (never commit SQL)
 database/*.sql
-!supabase/migrations/*.sql
-!supabase/rollbacks/*.sql
+supabase/**/*.sql
 
 # One-off dev/migration scripts (should not be committed)
 apply-sql.cjs
